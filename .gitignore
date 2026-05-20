@@ -1,0 +1,36 @@
+# Виртуальное окружение
+venv/
+.venv/
+env/
+ENV/
+
+# Кэш Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+
+# Переменные окружения и секреты (пароли, ключи API)
+.env
+.env.local
+.env.*.local
+
+# Базы данных (если используете локальные SQLite)
+*.sqlite3
+*.db
+
+# Логи и отчеты
+*.log
+htmlcov/
+.coverage
+
+# Настройки IDE (PyCharm, VS Code)
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+

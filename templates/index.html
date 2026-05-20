@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UMT — Калькулятор производства</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body data-theme="{% if shift_type == 'day' %}light{% else %}dark{% endif %}">
+    <header>
+        <div class="header-top">
+            <h1>🏭 UMT Калькулятор</h1>
+            <div class="shift-indicator" id="shiftIndicator">
+                <span class="shift-icon" id="shiftIcon">{% if shift_type == 'day' %}☀️{% else %}🌙{% endif %}</span>
+                <span class="shift-label" id="shiftLabel">{% if shift_type == 'day' %}Дневная{% else %}Ночная{% endif %} смена</span>
+                <span class="shift-time" id="shiftTime"></span>
+            </div>
+        </div>
+        <nav class="tab-nav" id="tabNav">
+            {% for machine in machines %}
+            <button class="tab-btn {% if loop.first %}active{% endif %}" data-tab="machine{{ machine.id }}">М-{{ machine.id }}</button>
+            {% endfor %}
+            <button class="tab-btn" data-tab="tape">📏 Лента</button>
+            <button class="tab-btn" data-tab="reference">📦 Справочник</button>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Machine Calculator Panels -->
+        {% for machine in machines %}
+        <div class="tab-content {% if loop.first %}active{% endif %}" id="machine{{ machine.id }}">
+            <div class="machine-panel">
+                <div class="machine-header">
+                    <h2>Машина {{ machine.id }}</h2>
+                    <span class="machine-badge">UMT-{{ '%02d'|format(machine.id) }}</span>
+                </div>
+                <div class="machine-body">
+                    <!-- Product Search -->
+                    <div class="autocomplete-wrapper">
+                        <div class="form-group">
+                            <label for="productName{{ machine.id }}">Наименование продукции</label>
+                            <input type="text" id="productName{{ machine.id }}" class="product-search"
+                                   placeholder="Начните вводить название..." autocomplete="off"
+                                   data-machine="{{ machine.id }}">
+                            <div class="autocomplete-list" id="autocomplete{{ machine.id }}"></div>
+                        </div>
+                    </div>
+
+                    <!-- Product Data Form -->
+                    <form id="productForm{{ machine.id }}" class="product-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cavitations{{ machine.id }}">Кавитации</label>
+                                <input type="number" id="cavitations{{ machine.id }}" min="1" value="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="cycles{{ machine.id }}">Тактов / мин</label>
+                                <input type="number" id="cycles{{ machine.id }}" step="0.1" min="0.1" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="piecesPerBox{{ machine.id }}">Штук в коробке</label>
+                                <input type="number" id="piecesPerBox{{ machine.id }}" min="1" value="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="boxesPerPallet{{ machine.id }}">Коробок на паллете</label>
+                                <input type="number" id="boxesPerPallet{{ machine.id }}" min="1" value="1" required>
+                            </div>
+                        </div>
+
+                        <!-- Time Info -->
+                        <div class="time-info">
+                            <div class="available-time">
+                                <span>⏱ Доступное время:</span>
+                                <span class="time-value" id="availTime{{ machine.id }}">--</span>
+                            </div>
+                            <div class="total-downtime-bar">
+                                <span>⏸ Общий простой:</span>
+                                <span class="time-value" id="totalDowntime{{ machine.id }}">0 мин</span>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">💾 Сохранить</button>
+                            <button type="button" class="btn btn-success calc-btn" data-machine="{{ machine.id }}">📊 Посчитать</button>
+                            <button type="button" class="btn btn-secondary reset-btn" data-machine="{{ machine.id }}">🔄 Сбросить</button>
+                        </div>
+                    </form>
+
+                    <!-- Results -->
+                    <div class="results-panel" id="results{{ machine.id }}" style="display:none;">
+                        <div class="result-card highlight">
+                            <div class="result-value" id="pallets{{ machine.id }}">0</div>
+                            <div class="result-label">Паллеты</div>
+                        </div>
+                        <div class="result-card">
+                            <div class="result-value" id="boxes{{ machine.id }}">0</div>
+                            <div class="result-label">Коробки</div>
+                        </div>
+                        <div class="result-card">
+                            <div class="result-value" id="pieces{{ machine.id }}">0</div>
+                            <div class="result-label">Штуки</div>
+                        </div>
+                    </div>
+
+                    <hr class="section-divider">
+
+                    <!-- Downtime Log -->
+                    <div class="downtime-section">
+                        <h3>⏱ Лог простоев</h3>
+                        <div class="downtime-form">
+                            <select id="downtimeType{{ machine.id }}">
+                                <option value="lunch">🍽 Обед (30 мин)</option>
+                                <option value="roller_7">🔄 Замена ролика (7 мин)</option>
+                                <option value="roller_15">🔄 Замена ролика (15 мин)</option>
+                                <option value="custom">⚙️ Произвольный</option>
+                            </select>
+                            <input type="number" id="downtimeDuration{{ machine.id }}" min="1" max="480"
+                                   placeholder="Мин" style="display:none;">
+                            <input type="text" id="downtimeNote{{ machine.id }}" placeholder="Примечание">
+                            <button class="btn btn-warning add-downtime-btn" data-machine="{{ machine.id }}">+ Добавить</button>
+                        </div>
+                        <div class="downtime-log" id="downtimeLog{{ machine.id }}"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- Tape Calculator -->
+        <div class="tab-content" id="tape">
+            <div class="tape-calculator">
+                <h2>📏 Калькулятор ленты</h2>
+                <form id="tapeForm">
+                    <div class="form-group">
+                        <label for="avgWeight">Средний вес изделия (г)</label>
+                        <input type="number" id="avgWeight" step="0.01" min="0.01" placeholder="Например: 15.5" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="wastePercent">Отходность (%)</label>
+                        <input type="number" id="wastePercent" step="0.1" min="0" max="100" placeholder="Например: 5" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="requiredPieces">Требуемое количество изделий</label>
+                        <input type="number" id="requiredPieces" min="1" placeholder="Например: 1000" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Рассчитать</button>
+                        <button type="reset" class="btn btn-secondary">Сбросить</button>
+                    </div>
+                </form>
+                <div class="results-panel" id="tapeResults" style="display:none;">
+                    <div class="result-card">
+                        <div class="result-value" id="tapeNeeded">0</div>
+                        <div class="result-label">Необходимо ленты (г)</div>
+                    </div>
+                    <div class="result-card highlight">
+                        <div class="result-value" id="tapePlus10">0</div>
+                        <div class="result-label">С запасом +10% (г)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Reference -->
+        <div class="tab-content" id="reference">
+            <div class="reference-panel">
+                <h2>📦 Справочник продукции</h2>
+                <p class="reference-hint">Данные здесь используются на всех машинах. Добавьте новый продукт или удалите ненужный.</p>
+                <div class="product-list" id="productList">
+                    <!-- Products loaded dynamically -->
+                </div>
+                <button class="btn btn-primary" id="addProductBtn" style="margin-top: 16px;">+ Добавить продукт</button>
+
+                <!-- Add Product Modal -->
+                <div class="modal-overlay" id="addProductModal" style="display:none;">
+                    <div class="modal">
+                        <div class="modal-header">
+                            <h3>Новый продукт</h3>
+                            <button class="modal-close" id="closeModal">&times;</button>
+                        </div>
+                        <form id="addProductForm">
+                            <div class="form-group">
+                                <label for="newProductName">Наименование</label>
+                                <input type="text" id="newProductName" placeholder="Название продукции" required>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="newCavitations">Кавитации</label>
+                                    <input type="number" id="newCavitations" min="1" value="1" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="newCycles">Тактов / мин</label>
+                                    <input type="number" id="newCycles" step="0.1" min="0.1" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="newPiecesPerBox">Штук в коробке</label>
+                                    <input type="number" id="newPiecesPerBox" min="1" value="1" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="newBoxesPerPallet">Коробок на паллете</label>
+                                    <input type="number" id="newBoxesPerPallet" min="1" value="1" required>
+                                </div>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Добавить</button>
+                                <button type="button" class="btn btn-secondary" id="cancelAdd">Отмена</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
