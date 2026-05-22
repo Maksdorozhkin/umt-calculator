@@ -47,17 +47,37 @@ class TapeCalculation(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.now)
 
 MACHINES = [1, 2, 3, 4, 5, 6, 7]
-
+# старая функция с ощибкой
+#def get_current_shift():
+    #"""Определяет текущую смену"""
+    #now = datetime.now()
+    #hour = now.hour
+    #minute = now.minute
+    
+    #if 8 <= hour < 19 or (hour == 19 and minute <= 50):
+        #return 'day', datetime(now.year, now.month, now.day, 19, 50)
+    #else:
+#        return 'night', datetime(now.year, now.month, now.day, 7, 50) + timedelta(days=1)
 def get_current_shift():
-    """Определяет текущую смену"""
+    """Определяет текущую смену (День/Ночь) и рассчитывает время окончания с учетом смещения в -10 минут."""
     now = datetime.now()
+    BOUNDARY_HOUR = 20  # Конечная граница дня / начало ночи (20:00)
+    SHIFT_END_ADJUSTMENT = timedelta(minutes=10)
+
     hour = now.hour
     minute = now.minute
-    
-    if 8 <= hour < 19 or (hour == 19 and minute <= 50):
-        return 'day', datetime(now.year, now.month, now.day, 19, 50)
+
+    if (8 <= hour < BOUNDARY_HOUR) or \
+        (hour == 8 and minute < 60): # Добавляем проверку
+        shift_type = 'day'
+        target_end = datetime(now.year, now.month, now.day, BOUNDARY_HOUR, 0)
     else:
-        return 'night', datetime(now.year, now.month, now.day, 7, 50) + timedelta(days=1)
+        shift_type = 'night'
+        target_end = datetime(now.year, now.month, now.day + 1, 8, 0)
+
+    shift_end = target_end - SHIFT_END_ADJUSTMENT
+    return shift_type, shift_end
+
 
 def calculate_production(product, machine_id):
     """Рассчитывает выпуск до конца смены. Возвращает: (паллеты, коробки_остаток, штуки)"""
