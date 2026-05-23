@@ -15,6 +15,8 @@
                 <span class="shift-label" id="shiftLabel">{% if shift_type == 'day' %}Дневная{% else %}Ночная{% endif %} смена</span>
                 <span class="shift-time" id="shiftTime"></span>
             </div>
+            <!--Кнопка обновления-->
+            <button class="refresh-btn" id="refreshButton" type="button" title="Обновить страницу">🔄</button>
         </div>
         <nav class="tab-nav" id="tabNav">
             {% for machine in machines %}
