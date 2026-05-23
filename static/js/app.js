@@ -87,17 +87,46 @@ function updateShiftDisplay() {
     updateAvailableTime(currentMachine);
 }
 
+// старая функция которая считала время до 7:50
+// function getShiftEndMinutes() {
+//     const now = new Date();
+//     const totalMinutes = now.getHours() * 60 + now.getMinutes();
+
+//     if (totalMinutes >= 480 && totalMinutes < 1190) {
+//         return 1190; // Day shift ends at 19:50
+//     } else {
+//         // Night shift: if after 20:00, ends at 07:50 next day
+//         if (totalMinutes >= 1200) return 1910; // 24*60 + 7*60 + 50 = 1910
+//         return 470; // 07:50
+//     }
+// }
+// Новая функция считает до 8:00
+//
 function getShiftEndMinutes() {
     const now = new Date();
     const totalMinutes = now.getHours() * 60 + now.getMinutes();
 
-    if (totalMinutes >= 480 && totalMinutes < 1190) {
-        return 1190; // Day shift ends at 19:50
+    // Строгие границы: День с 08:00 (480) до 20:00 (1200)
+    if (totalMinutes >= 480 && totalMinutes < 1200) {
+        return 1200; // Конец дня ровно в 20:00
     } else {
-        // Night shift: if after 20:00, ends at 07:50 next day
-        if (totalMinutes >= 1200) return 1910; // 24*60 + 7*60 + 50 = 1910
-        return 470; // 07:50
+        // Конец ночи ровно в 08:00 следующего дня (24ч * 60 + 8ч * 60 = 1920)
+        if (totalMinutes >= 1200) return 1920;
+        return 480; // Конец ночи ровно в 08:00 текущего дня
     }
+}
+// Отнимаем 10 минут пересменки
+function getRemainingMinutes() {
+    const now = new Date();
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+    // Получаем чистое время до конца смены (до 20:00 или 08:00)
+    const end = getShiftEndMinutes();
+    const totalRemaining = end - nowMinutes;
+
+    // Отнимаем 10 минут пересменки.
+    // Math.max(0, ...) гарантирует, что во время самой пересменки на экране останется "0 мин", а не минус.
+    return Math.max(0, totalRemaining - 10);
 }
 
 function getRemainingMinutes() {
