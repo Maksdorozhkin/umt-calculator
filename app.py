@@ -379,31 +379,77 @@ def calculate_machine_production(machine_id):
 #        return jsonify({'success': False, 'error': str(e)}), 500
 #
 ##############################
-# новая функция с учетом дробленки помогла gemma вычислить скрытый коэффициент
-###############################
+# def calculate_tape():
+#     try:
+#         data = request.json
+#         avg_weight = float(data["avg_weight"])  # Вес 1 шт. в граммах (например: 70.04)
+#         waste_percent = float(data["waste_percent"])  # Отходность в % (например: 27)
+#         required_pieces = int(data["required_pieces"])  # Тираж в шт. (например: 20000)
+
+#         pure_total_weight_kg = (avg_weight * required_pieces) / 1000
+
+#         base_tape_needed = pure_total_weight_kg / (1 - (waste_percent / 100))
+
+#         tape_needed = base_tape_needed * 1.05
+#         droblenka_output = tape_needed - pure_total_weight_kg
+#         tape_plus_10 = tape_needed * 1.1
+#         calc = TapeCalculation(
+#             avg_weight=avg_weight,
+#             waste_percent=waste_percent,
+#             required_pieces=required_pieces,
+#             result_tape=tape_needed,
+#             result_tape_plus_10=tape_plus_10,
+#         )
+#         db.session.add(calc)
+#         db.session.commit()
+#         return jsonify(
+#             {
+#                 "tape_needed": round(tape_needed, 2),
+#                 "droblenka_output": round(droblenka_output, 2),
+#                 "tape_plus_10": round(tape_plus_10, 2),
+#             }
+#         )
+
+#     except Exception as e:
+#         db.session.rollback()
+#         return jsonify({"success": False, "error": str(e)}), 500
+
 def calculate_tape():
     try:
         data = request.json
-        avg_weight = float(data["avg_weight"])  # Вес 1 шт. в граммах (например: 70.04)
-        waste_percent = float(data["waste_percent"])  # Отходность в % (например: 27)
-        required_pieces = int(data["required_pieces"])  # Тираж в шт. (например: 20000)
+        avg_weight = float(data["avg_weight"])
+        waste_percent = float(data["waste_percent"])
+        required_pieces = int(data["required_pieces"])
 
+        # 1. Вычисляем чистый вес всей готовой партии в кг
         pure_total_weight_kg = (avg_weight * required_pieces) / 1000
 
+        # 2. Рассчитываем базовую потребность по формуле баланса массы
         base_tape_needed = pure_total_weight_kg / (1 - (waste_percent / 100))
 
+        # 3. Применяем скрытый технологический коэффициент 1.05 (зашитый в таблицу запас 5%)
+        # Для теста (10г, 10%, 100к шт) это даст ровно 1166.67 кг (в Excel округлено до 1167)
         tape_needed = base_tape_needed * 1.05
+
+        # 4. Считаем выход дробленки (Разница между зашедшей лентой и чистым весом)
+        # Для теста: 1166.67 - 1000 = 166.67 кг
         droblenka_output = tape_needed - pure_total_weight_kg
+
+        # 5. надбавка +10% поверх заводского норматива Excel
         tape_plus_10 = tape_needed * 1.1
+
+        # Сохраняем расчет в базу данных
         calc = TapeCalculation(
             avg_weight=avg_weight,
             waste_percent=waste_percent,
             required_pieces=required_pieces,
-            result_tape=tape_needed,
-            result_tape_plus_10=tape_plus_10,
+            result_tape=round(tape_needed, 2),
+            result_tape_plus_10=round(tape_plus_10, 2),
         )
         db.session.add(calc)
         db.session.commit()
+
+        # Возвращаем результат, округленный до 2 знаков
         return jsonify(
             {
                 "tape_needed": round(tape_needed, 2),
