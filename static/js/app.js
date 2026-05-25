@@ -17,37 +17,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 
-// // ==================== Определение смены (старая функция до 7/50) ====================
-// function updateShiftDisplay() {
-//     const now = new Date();
-//     const hours = now.getHours();
-//     const minutes = now.getMinutes();
-//     const totalMinutes = hours * 60 + minutes;
-
-//     let isDayShift;
-//     if (totalMinutes >= 480 && totalMinutes < 1190) {
-//         isDayShift = true; // 08:00 - 19:50
-//     } else if (totalMinutes >= 1200 || totalMinutes < 470) {
-//         isDayShift = false; // 20:00 - 07:50
-//     } else {
-//         isDayShift = true; // transition
-//     }
-
-//     document.documentElement.setAttribute('data-theme', isDayShift ? 'light' : 'dark');
-
-//     const icon = document.getElementById('shiftIcon');
-//     const label = document.getElementById('shiftLabel');
-//     const time = document.getElementById('shiftTime');
-
-//     if (isDayShift) {
-//         icon.textContent = '☀️';
-//         label.textContent = 'Дневная смена';
-//     } else {
-//         icon.textContent = '🌙';
-//         label.textContent = 'Ночная смена';
-//     }
-
-// // Определение смены (новая функция до 8:00)
+// Определение смены (новая функция до 8:00)
 function updateShiftDisplay() {
     const now = new Date();
     const hours = now.getHours();
@@ -87,53 +57,35 @@ function updateShiftDisplay() {
     updateAvailableTime(currentMachine);
 }
 
-// старая функция которая считала время до 7:50
-// function getShiftEndMinutes() {
-//     const now = new Date();
-//     const totalMinutes = now.getHours() * 60 + now.getMinutes();
-
-//     if (totalMinutes >= 480 && totalMinutes < 1190) {
-//         return 1190; // Day shift ends at 19:50
-//     } else {
-//         // Night shift: if after 20:00, ends at 07:50 next day
-//         if (totalMinutes >= 1200) return 1910; // 24*60 + 7*60 + 50 = 1910
-//         return 470; // 07:50
-//     }
-// }
-// Новая функция считает до 8:00
-//
+//  ОПРЕДЕЛЯЕМ КОНЕЦ СМЕНЫ
 function getShiftEndMinutes() {
     const now = new Date();
     const totalMinutes = now.getHours() * 60 + now.getMinutes();
 
-    // Строгие границы: День с 08:00 (480) до 20:00 (1200)
+    // Дневная смена (с 8:00 до 20:00) -> закончится в 20:00 (1200 мин)
     if (totalMinutes >= 480 && totalMinutes < 1200) {
-        return 1200; // Конец дня ровно в 20:00
-    } else {
-        // Конец ночи ровно в 08:00 следующего дня (24ч * 60 + 8ч * 60 = 1920)
-        if (totalMinutes >= 1200) return 1920;
-        return 480; // Конец ночи ровно в 08:00 текущего дня
+        return 1200;
     }
+
+    // Ночная смена ДО полуночи (с 20:00 до 00:00) -> закончится в 8 утра следующего дня (1440 + 480 = 1920 мин)
+    if (totalMinutes >= 1200) {
+        return 1920;
+    }
+
+    // Ночная смена ПОСЛЕ полуночи ( Ground zero, с 00:00 до 8:00) -> закончится в 8 утра текущего дня (480 мин)
+    return 480;
 }
-// Отнимаем 10 минут пересменки
+
+// 2. СЧИТАЕМ ОСТАТОК ВРЕМЕНИ (-10 минут пересменки)
 function getRemainingMinutes() {
     const now = new Date();
     const nowMinutes = now.getHours() * 60 + now.getMinutes();
 
-    // Получаем чистое время до конца смены (до 20:00 или 08:00)
     const end = getShiftEndMinutes();
     const totalRemaining = end - nowMinutes;
 
-    // Отнимаем 10 минут пересменки.
-    // Math.max(0, ...) гарантирует, что во время самой пересменки на экране останется "0 мин", а не минус.
+    // Math.max не даст счетчику уйти в минус во время пересменки
     return Math.max(0, totalRemaining - 10);
-}
-
-function getRemainingMinutes() {
-    const now = new Date();
-    const nowMinutes = now.getHours() * 60 + now.getMinutes();
-    const end = getShiftEndMinutes();
-    return Math.max(0, end - nowMinutes);
 }
 
 function formatTimeShort(minutes) {
@@ -157,7 +109,7 @@ function updateAvailableTime(machineId) {
     totalEl.textContent = totalDowntime > 0 ? `${totalDowntime} мин` : "0 мин";
 }
 
-// ==================== TABS ====================
+// Переключение вкладок
 function setupTabs() {
     const tabs = document.querySelectorAll(".tab-btn");
     const contents = document.querySelectorAll(".tab-content");
@@ -185,7 +137,7 @@ function setupTabs() {
     });
 }
 
-// ==================== PRODUCT CACHE ====================
+// загрузка кэша продуктов
 async function loadProductCache() {
     try {
         const response = await fetch("/api/products");
@@ -196,7 +148,7 @@ async function loadProductCache() {
     }
 }
 
-// ==================== AUTOCOMPLETE ====================
+// AUTOCOMPLETE
 function setupAutocomplete() {
     for (let i = 1; i <= 7; i++) {
         const input = document.getElementById(`productName${i}`);
@@ -305,7 +257,7 @@ function setupProductForms() {
     }
 }
 
-// ==================== DOWNTIME SELECTORS ====================
+// Видимость полей простоя
 function setupDowntimeSelectors() {
     for (let i = 1; i <= 7; i++) {
         const select = document.getElementById(`downtimeType${i}`);
@@ -324,7 +276,7 @@ function setupDowntimeSelectors() {
     }
 }
 
-// ==================== TAPE FORM ====================
+// Форма калькулятора ленты
 function setupTapeForm() {
     const form = document.getElementById("tapeForm");
     if (!form) return;
@@ -341,7 +293,7 @@ function setupTapeForm() {
     });
 }
 
-// ==================== REFERENCE PANEL ====================
+// Окно добавления продукта
 function setupReferencePanel() {
     const addBtn = document.getElementById("addProductBtn");
     const modal = document.getElementById("addProductModal");
@@ -595,7 +547,7 @@ function resetCalculator(machineId) {
     showNotification("Калькулятор сброшен", "success");
 }
 
-// ==================== DOWNTIME ====================
+// Получение общего времени простоя для машины
 function getTotalDowntimeForMachine(machineId) {
     const logContainer = document.getElementById(`downtimeLog${machineId}`);
     if (!logContainer) return 0;
