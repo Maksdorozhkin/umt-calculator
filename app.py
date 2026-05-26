@@ -67,6 +67,28 @@ MACHINES = [1, 2, 3, 4, 5, 6, 7]
 # return 'day', datetime(now.year, now.month, now.day, 19, 50)
 # else:
 #        return 'night', datetime(now.year, now.month, now.day, 7, 50) + timedelta(days=1)
+
+
+# def get_current_shift():
+#     """Определяет текущую смену (День/Ночь) и рассчитывает время окончания с учетом смещения в -10 минут."""
+#     now = datetime.now()
+#     BOUNDARY_HOUR = 20  # Конечная граница дня / начало ночи (20:00)
+#     SHIFT_END_ADJUSTMENT = timedelta(minutes=10)
+
+#     hour = now.hour
+#     minute = now.minute
+
+#     if (8 <= hour < BOUNDARY_HOUR) or (hour == 8 and minute < 60):  # Добавляем проверку
+#         shift_type = "day"
+#         target_end = datetime(now.year, now.month, now.day, BOUNDARY_HOUR, 0)
+#     else:
+#         shift_type = "night"
+#         target_end = datetime(now.year, now.month, now.day + 1, 8, 0)
+
+#     shift_end = target_end - SHIFT_END_ADJUSTMENT
+#     return shift_type, shift_end
+
+
 def get_current_shift():
     """Определяет текущую смену (День/Ночь) и рассчитывает время окончания с учетом смещения в -10 минут."""
     now = datetime.now()
@@ -74,14 +96,22 @@ def get_current_shift():
     SHIFT_END_ADJUSTMENT = timedelta(minutes=10)
 
     hour = now.hour
-    minute = now.minute
 
-    if (8 <= hour < BOUNDARY_HOUR) or (hour == 8 and minute < 60):  # Добавляем проверку
+    if 8 <= hour < BOUNDARY_HOUR:
+        # Дневная смена: началась сегодня в 08:00, закончится сегодня в 20:00
         shift_type = "day"
-        target_end = datetime(now.year, now.month, now.day, BOUNDARY_HOUR, 0)
+        target_end = now.replace(hour=BOUNDARY_HOUR, minute=0, second=0, microsecond=0)
     else:
+        # Ночная смена
         shift_type = "night"
-        target_end = datetime(now.year, now.month, now.day + 1, 8, 0)
+        if hour >= BOUNDARY_HOUR:
+            # Время от 20:00 до 23:59. Смена закончится ЗАВТРА в 08:00.
+            # Используем timedelta(days=1) вместо now.day + 1, чтобы не сломать конец месяца
+            tomorrow = now + timedelta(days=1)
+            target_end = tomorrow.replace(hour=8, minute=0, second=0, microsecond=0)
+        else:
+            # Время от 00:00 до 07:59 (ваше "под утро"). Смена закончится СЕГОДНЯ в 08:00.
+            target_end = now.replace(hour=8, minute=0, second=0, microsecond=0)
 
     shift_end = target_end - SHIFT_END_ADJUSTMENT
     return shift_type, shift_end
