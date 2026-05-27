@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", function () {
     setupTapeForm();
     setupAutocomplete();
     setupReferencePanel();
+    setupItemsCalculator();
     updateShiftDisplay();
     setInterval(updateShiftDisplay, 60000);
     loadInitialData();
@@ -752,6 +753,57 @@ window.resetDatabase = async function () {
     showNotification("Ошибка подключения к серверу", "error");
   }
 };
+// ==================== ITEMS CALCULATOR ====================
+function setupItemsCalculator() {
+  const openBtn = document.getElementById("openItemsCalcBtn");
+  const modal = document.getElementById("itemsCalcModal");
+  const closeBtn = document.getElementById("closeItemsCalc");
+  const totalOrderInput = document.getElementById("totalOrder");
+  const remainingInput = document.getElementById("remainingItems");
+
+  if (openBtn) {
+    openBtn.addEventListener("click", () => {
+      modal.style.display = "flex";
+    });
+  }
+
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => {
+      modal.style.display = "none";
+    });
+  }
+
+  if (modal) {
+    modal.addEventListener("click", function (e) {
+      if (e.target === modal) {
+        modal.style.display = "none";
+      }
+    });
+  }
+
+  function updateItemsCalc() {
+    const totalOrder = parseFloat(totalOrderInput.value) || 0;
+    const remaining = parseFloat(remainingInput.value) || 0;
+
+    const fivePercent = Math.round(totalOrder * 0.05);
+    const remainingPlusFive = remaining + fivePercent;
+    const remainingMinusFive = remaining - fivePercent;
+
+    document.getElementById("fivePercent").textContent = fivePercent;
+    document.getElementById("remainingPlusFive").textContent =
+      remainingPlusFive;
+    document.getElementById("remainingMinusFive").textContent =
+      remainingMinusFive;
+  }
+
+  if (totalOrderInput) {
+    totalOrderInput.addEventListener("input", updateItemsCalc);
+  }
+  if (remainingInput) {
+    remainingInput.addEventListener("input", updateItemsCalc);
+  }
+}
+
 // Кнопка обновления
 document.addEventListener("DOMContentLoaded", () => {
   const refreshBtn = document.getElementById("refreshButton");

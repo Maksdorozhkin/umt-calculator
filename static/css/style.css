@@ -798,6 +798,40 @@ header {
         padding: 5px 10px;
     }
 }
+/* ===== Items Calculator Results ===== */
+.items-calc-results {
+    margin-top: 16px;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+}
+
+.items-calc-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    background: var(--bg-primary);
+    border-radius: var(--radius-sm);
+    margin-bottom: 8px;
+    border: 1px solid var(--border);
+}
+
+.items-calc-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.items-calc-value {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--accent);
+}
+
+.items-calc-value.highlight {
+    color: var(--success);
+}
+
 /* Кнопка обновления */
 .refresh-btn {
     background: var(--accent-light);
