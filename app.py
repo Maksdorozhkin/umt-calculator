@@ -55,7 +55,7 @@ class TapeCalculation(db.Model):
 
 
 MACHINES = [1, 2, 3, 4, 5, 6, 7]
-# старая функция с ощибкой
+# старая функция с ошибкой
 # def get_current_shift():
 # """Определяет текущую смену"""
 # now = datetime.now()
