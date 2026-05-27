@@ -36,6 +36,10 @@
                     🔄
                 </button>
             </div>
+                <button class="tab-btn" id="openItemsCalcBtn">
+                    🧮 Изделия
+                </button>
+                <button class="tab-btn" data-tab="tape">📏 Лента</button>
             <nav class="tab-nav" id="tabNav">
                 {% for machine in machines %}
                 <button
@@ -45,10 +49,6 @@
                     М-{{ machine.id }}
                 </button>
                 {% endfor %}
-                <button class="tab-btn" data-tab="tape">📏 Лента</button>
-                <button class="tab-btn" id="openItemsCalcBtn">
-                    🧮 Изделия
-                </button>
                 <button class="tab-btn" data-tab="reference">
                     📦 Справочник
                 </button>
