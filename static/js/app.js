@@ -760,6 +760,8 @@ function setupItemsCalculator() {
   const closeBtn = document.getElementById("closeItemsCalc");
   const totalOrderInput = document.getElementById("totalOrder");
   const remainingInput = document.getElementById("remainingItems");
+  const itemsPerBoxInput = document.getElementById("itemsPerBox");
+  const boxesPerPalletInput = document.getElementById("boxesPerPallet");
 
   if (openBtn) {
     openBtn.addEventListener("click", () => {
@@ -781,19 +783,57 @@ function setupItemsCalculator() {
     });
   }
 
+  // Форматирование числа с пробелами-разделителями: 1000000 -> 1 000 000
+  function formatNumber(num) {
+    return num.toLocaleString("ru-RU").replace(/\s/g, " ");
+  }
+
+  // Конвертировать штуки в паллеты + коробки
+  function toPalletsBoxes(totalPieces, itemsPerBox, boxesPerPallet) {
+    const totalBoxes = Math.floor(totalPieces / itemsPerBox);
+    const fullPallets = Math.floor(totalBoxes / boxesPerPallet);
+    const leftoverBoxes = totalBoxes - (fullPallets * boxesPerPallet);
+    return { pallets: fullPallets, boxes: leftoverBoxes };
+  }
+
   function updateItemsCalc() {
     const totalOrder = parseFloat(totalOrderInput.value) || 0;
     const remaining = parseFloat(remainingInput.value) || 0;
+    const itemsPerBox = parseInt(itemsPerBoxInput.value) || 0;
+    const boxesPerPallet = parseInt(boxesPerPalletInput.value) || 0;
 
     const fivePercent = Math.round(totalOrder * 0.05);
     const remainingPlusFive = remaining + fivePercent;
-    const remainingMinusFive = remaining - fivePercent;
+    // Не даём уйти в минус: если 5% > оставшегося, результат = 0
+    const remainingMinusFive = Math.max(0, remaining - fivePercent);
 
-    document.getElementById("fivePercent").textContent = fivePercent;
+    document.getElementById("fivePercent").textContent = formatNumber(fivePercent);
     document.getElementById("remainingPlusFive").textContent =
-      remainingPlusFive;
+      formatNumber(remainingPlusFive);
     document.getElementById("remainingMinusFive").textContent =
-      remainingMinusFive;
+      formatNumber(remainingMinusFive);
+
+    // Если заполнены оба поля упаковки — показываем разбивку по паллетам/коробкам
+    const hasPackingData = itemsPerBox > 0 && boxesPerPallet > 0;
+
+    const plusSection = document.getElementById("palletResults");
+    const minusSection = document.getElementById("palletResultsMinus");
+
+    if (hasPackingData) {
+      plusSection.style.display = "block";
+      minusSection.style.display = "block";
+
+      const plusBreakdown = toPalletsBoxes(remainingPlusFive, itemsPerBox, boxesPerPallet);
+      document.getElementById("plusFivePallets").textContent = formatNumber(plusBreakdown.pallets);
+      document.getElementById("plusFiveBoxes").textContent = formatNumber(plusBreakdown.boxes);
+
+      const minusBreakdown = toPalletsBoxes(remainingMinusFive, itemsPerBox, boxesPerPallet);
+      document.getElementById("minusFivePallets").textContent = formatNumber(minusBreakdown.pallets);
+      document.getElementById("minusFiveBoxes").textContent = formatNumber(minusBreakdown.boxes);
+    } else {
+      plusSection.style.display = "none";
+      minusSection.style.display = "none";
+    }
   }
 
   if (totalOrderInput) {
@@ -801,6 +841,12 @@ function setupItemsCalculator() {
   }
   if (remainingInput) {
     remainingInput.addEventListener("input", updateItemsCalc);
+  }
+  if (itemsPerBoxInput) {
+    itemsPerBoxInput.addEventListener("input", updateItemsCalc);
+  }
+  if (boxesPerPalletInput) {
+    boxesPerPalletInput.addEventListener("input", updateItemsCalc);
   }
 }
 

@@ -485,6 +485,28 @@
                         />
                     </div>
 
+                    <!-- Упаковка (опционально) -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="itemsPerBox">Штук в коробке</label>
+                            <input
+                                type="number"
+                                id="itemsPerBox"
+                                min="1"
+                                placeholder="Необязательно"
+                            />
+                        </div>
+                        <div class="form-group">
+                            <label for="boxesPerPallet">Коробок на паллете</label>
+                            <input
+                                type="number"
+                                id="boxesPerPallet"
+                                min="1"
+                                placeholder="Необязательно"
+                            />
+                        </div>
+                    </div>
+
                     <!-- Results -->
                     <div class="items-calc-results">
                         <div class="items-calc-row">
@@ -498,6 +520,30 @@
                         <div class="items-calc-row">
                             <span class="items-calc-label">Осталось − 5%</span>
                             <span class="items-calc-value highlight" id="remainingMinusFive">0</span>
+                        </div>
+
+                        <!-- Результаты в паллетах/коробках (показываются если заполнены поля упаковки) -->
+                        <div class="items-calc-section" id="palletResults" style="display:none;">
+                            <div class="items-calc-section-title">Осталось + 5%</div>
+                            <div class="items-calc-row">
+                                <span class="items-calc-label">Паллеты</span>
+                                <span class="items-calc-value" id="plusFivePallets">0</span>
+                            </div>
+                            <div class="items-calc-row">
+                                <span class="items-calc-label">Коробки</span>
+                                <span class="items-calc-value" id="plusFiveBoxes">0</span>
+                            </div>
+                        </div>
+                        <div class="items-calc-section" id="palletResultsMinus" style="display:none;">
+                            <div class="items-calc-section-title">Осталось − 5%</div>
+                            <div class="items-calc-row">
+                                <span class="items-calc-label">Паллеты</span>
+                                <span class="items-calc-value" id="minusFivePallets">0</span>
+                            </div>
+                            <div class="items-calc-row">
+                                <span class="items-calc-label">Коробки</span>
+                                <span class="items-calc-value" id="minusFiveBoxes">0</span>
+                            </div>
                         </div>
                     </div>
                 </div>
