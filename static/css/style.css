@@ -691,8 +691,9 @@ header {
     color: var(--danger);
 }
 
-.modal form {
-    padding: 20px;
+.modal form,
+.modal-body {
+    padding: 24px;
 }
 
 /* ===== Section Divider ===== */
