@@ -148,7 +148,7 @@ def calculate_production(product, machine_id):
     return full_pallets, remaining_boxes, math.floor(total_pieces)
 
 
-# ====== Маршруты ======
+# Маршруты
 
 
 @app.route("/")
