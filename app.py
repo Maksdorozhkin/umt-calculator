@@ -55,38 +55,6 @@ class TapeCalculation(db.Model):
 
 
 MACHINES = [1, 2, 3, 4, 5, 6, 7]
-# старая функция с ошибкой
-# def get_current_shift():
-# """Определяет текущую смену"""
-# now = datetime.now()
-# hour = now.hour
-# minute = now.minute
-
-
-# if 8 <= hour < 19 or (hour == 19 and minute <= 50):
-# return 'day', datetime(now.year, now.month, now.day, 19, 50)
-# else:
-#        return 'night', datetime(now.year, now.month, now.day, 7, 50) + timedelta(days=1)
-
-
-# def get_current_shift():
-#     """Определяет текущую смену (День/Ночь) и рассчитывает время окончания с учетом смещения в -10 минут."""
-#     now = datetime.now()
-#     BOUNDARY_HOUR = 20  # Конечная граница дня / начало ночи (20:00)
-#     SHIFT_END_ADJUSTMENT = timedelta(minutes=10)
-
-#     hour = now.hour
-#     minute = now.minute
-
-#     if (8 <= hour < BOUNDARY_HOUR) or (hour == 8 and minute < 60):  # Добавляем проверку
-#         shift_type = "day"
-#         target_end = datetime(now.year, now.month, now.day, BOUNDARY_HOUR, 0)
-#     else:
-#         shift_type = "night"
-#         target_end = datetime(now.year, now.month, now.day + 1, 8, 0)
-
-#     shift_end = target_end - SHIFT_END_ADJUSTMENT
-#     return shift_type, shift_end
 
 
 def get_current_shift():
@@ -190,7 +158,7 @@ def get_all_products():
 
 
 @app.route("/api/products", methods=["POST"])
-def save_product():
+def save_product():  # Функция без проверки типов данных
     try:
         data = request.json
         name = data["name"].strip()
@@ -381,69 +349,6 @@ def calculate_machine_production(machine_id):
 
 
 @app.route("/api/tape-calculation", methods=["POST"])
-# def calculate_tape(): # считала без учета дробленки
-#    try:
-#        data = request.json
-#        avg_weight = float(data['avg_weight'])
-#        waste_percent = float(data['waste_percent'])
-#        required_pieces = int(data['required_pieces'])
-
-#        total_weight = avg_weight * required_pieces
-#        tape_needed = total_weight / (1 - waste_percent / 100)
-#        tape_plus_10 = tape_needed * 1.1
-
-#        calc = TapeCalculation(
-#            avg_weight=avg_weight, waste_percent=waste_percent,
-#            required_pieces=required_pieces,
-#            result_tape=tape_needed, result_tape_plus_10=tape_plus_10
-#        )
-#        db.session.add(calc)
-#        db.session.commit()
-
-#        return jsonify({
-#            'tape_needed': round(tape_needed, 2),
-#            'tape_plus_10': round(tape_plus_10, 2)
-#        })
-#    except Exception as e:
-#        db.session.rollback()
-#        return jsonify({'success': False, 'error': str(e)}), 500
-#
-##############################
-# def calculate_tape():
-#     try:
-#         data = request.json
-#         avg_weight = float(data["avg_weight"])  # Вес 1 шт. в граммах (например: 70.04)
-#         waste_percent = float(data["waste_percent"])  # Отходность в % (например: 27)
-#         required_pieces = int(data["required_pieces"])  # Тираж в шт. (например: 20000)
-
-#         pure_total_weight_kg = (avg_weight * required_pieces) / 1000
-
-#         base_tape_needed = pure_total_weight_kg / (1 - (waste_percent / 100))
-
-#         tape_needed = base_tape_needed * 1.05
-#         droblenka_output = tape_needed - pure_total_weight_kg
-#         tape_plus_10 = tape_needed * 1.1
-#         calc = TapeCalculation(
-#             avg_weight=avg_weight,
-#             waste_percent=waste_percent,
-#             required_pieces=required_pieces,
-#             result_tape=tape_needed,
-#             result_tape_plus_10=tape_plus_10,
-#         )
-#         db.session.add(calc)
-#         db.session.commit()
-#         return jsonify(
-#             {
-#                 "tape_needed": round(tape_needed, 2),
-#                 "droblenka_output": round(droblenka_output, 2),
-#                 "tape_plus_10": round(tape_plus_10, 2),
-#             }
-#         )
-
-#     except Exception as e:
-#         db.session.rollback()
-#         return jsonify({"success": False, "error": str(e)}), 500
-
 def calculate_tape():
     try:
         data = request.json
