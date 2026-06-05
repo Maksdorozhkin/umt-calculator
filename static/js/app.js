@@ -103,11 +103,14 @@ function updateAvailableTime(machineId) {
     if (!availEl) return;
 
     const remaining = getRemainingMinutes();
-    const totalDowntime = getTotalDowntimeForMachine(machineId);
-    const effective = Math.max(0, remaining - totalDowntime);
+    // Доступное время = осталось - только будущие простои
+    const futureDowntime = getTotalDowntimeForMachine(machineId);
+    const effective = Math.max(0, remaining - futureDowntime);
 
     availEl.textContent = formatTimeShort(effective);
-    totalEl.textContent = totalDowntime > 0 ? `${totalDowntime} мин` : "0 мин";
+    // Общий простой = ВСЕ простои за смену (и прошедшие, и будущие)
+    const allDowntime = getTotalDowntimeAllForMachine(machineId);
+    totalEl.textContent = allDowntime > 0 ? `${allDowntime} мин` : "0 мин";
 }
 
 // Переключение вкладок
@@ -557,6 +560,21 @@ function getTotalDowntimeForMachine(machineId) {
     const entries = logContainer.querySelectorAll(
         '.downtime-entry[data-future="true"] .downtime-duration',
     );
+    let total = 0;
+    entries.forEach((el) => {
+        const text = el.textContent;
+        const match = text.match(/(\d+)/);
+        if (match) total += parseInt(match[1]);
+    });
+    return total;
+}
+
+// Получение ВСЕГО времени простоя за смену (и прошедшие, и будущие)
+function getTotalDowntimeAllForMachine(machineId) {
+    const logContainer = document.getElementById(`downtimeLog${machineId}`);
+    if (!logContainer) return 0;
+
+    const entries = logContainer.querySelectorAll('.downtime-duration');
     let total = 0;
     entries.forEach((el) => {
         const text = el.textContent;
