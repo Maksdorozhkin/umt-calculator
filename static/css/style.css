@@ -200,7 +200,6 @@ header {
 .machine-body {
     padding: 20px;
 }
-
 /* ===== Forms ===== */
 .form-group {
     margin-bottom: 14px;
@@ -362,9 +361,11 @@ header {
     background: var(--danger-hover);
 }
 
-/* ===== Time Info Bars ===== */
+/* Time Info Bars*/
 .time-info {
     margin: 16px 0;
+    display: flex;
+    gap: 8px;
 }
 
 .available-time {
@@ -372,13 +373,13 @@ header {
     border: 1px solid var(--success);
     border-radius: var(--radius-sm);
     padding: 10px 14px;
-    margin-bottom: 8px;
     font-size: 0.85rem;
-    font-weight: 600;
+    font-weight: 480;
     color: var(--success);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex: 1;
 }
 
 .total-downtime-bar {
@@ -387,11 +388,12 @@ header {
     border-radius: var(--radius-sm);
     padding: 10px 14px;
     font-size: 0.85rem;
-    font-weight: 600;
+    font-weight: 480;
     color: var(--accent);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex: 1;
 }
 
 .time-value {
@@ -760,6 +762,9 @@ header {
         font-size: 1.1rem;
     }
 
+    .time-info {
+        flex-direction: column;
+    }
     .tab-btn {
         padding: 7px 12px;
         font-size: 0.82rem;
@@ -775,6 +780,7 @@ header {
 
     .machine-body {
         padding: 16px;
+        max-width: 480px;
     }
 
     .downtime-form {
