@@ -763,7 +763,17 @@ header {
     }
 
     .time-info {
-        flex-direction: column;
+        gap: 6px;
+    }
+
+    .available-time,
+    .total-downtime-bar {
+        padding: 8px 10px;
+        font-size: 0.78rem;
+    }
+
+    .time-info .time-value {
+        font-size: 0.95rem;
     }
     .tab-btn {
         padding: 7px 12px;
