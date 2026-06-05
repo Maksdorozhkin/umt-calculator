@@ -545,6 +545,16 @@ header {
     flex-shrink: 0;
 }
 
+/* Прошедшие простои — приглушенные */
+.downtime-entry[data-future="false"] {
+    opacity: 0.5;
+}
+
+.past-badge {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
 /* ===== Tape Calculator ===== */
 .tape-calculator {
     background: var(--bg-card);

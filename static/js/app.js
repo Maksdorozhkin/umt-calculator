@@ -548,12 +548,15 @@ function resetCalculator(machineId) {
     showNotification("Калькулятор сброшен", "success");
 }
 
-// Получение общего времени простоя для машины
+// Получение общего времени простоя для машины (только БУДУЩИЕ простои)
 function getTotalDowntimeForMachine(machineId) {
     const logContainer = document.getElementById(`downtimeLog${machineId}`);
     if (!logContainer) return 0;
 
-    const entries = logContainer.querySelectorAll(".downtime-duration");
+    // Считаем только простои с timestamp >= сейчас (будущие)
+    const entries = logContainer.querySelectorAll(
+        '.downtime-entry[data-future="true"] .downtime-duration',
+    );
     let total = 0;
     entries.forEach((el) => {
         const text = el.textContent;
@@ -635,11 +638,13 @@ async function loadDowntimeLog(machineId) {
                     hour: "2-digit",
                     minute: "2-digit",
                 });
+                // is_future приходит с сервера — он сравнивает на одном часе
+                const isFuture = d.is_future === true;
                 return `
-                <div class="downtime-entry">
+                <div class="downtime-entry" data-future="${isFuture}">
                     <div class="downtime-info">
                         <span class="downtime-type">${typeNames[d.downtime_type] || d.downtime_type}</span>
-                        <span class="downtime-detail">${time}${d.note ? " · " + escapeHtml(d.note) : ""}</span>
+                        <span class="downtime-detail">${time}${d.note ? " · " + escapeHtml(d.note) : ""}${!isFuture ? " <em class='past-badge'>(прошедший)</em>" : ""}</span>
                     </div>
                     <span class="downtime-duration">${d.duration_minutes} мин</span>
                     <button class="btn btn-danger" onclick="deleteDowntime(${machineId}, ${d.id})" title="Удалить">✕</button>

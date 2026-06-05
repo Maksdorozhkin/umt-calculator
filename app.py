@@ -95,9 +95,12 @@ def calculate_production(product, machine_id):
         return 0, 0, 0
 
     shift_start = shift_end - timedelta(hours=11, minutes=50)
+    now = datetime.now()
+    # Буфер 10 сек: простои добавленные прямо сейчас учитываются
+    cutoff = now - timedelta(seconds=10)
     downtimes = DowntimeLog.query.filter(
         DowntimeLog.machine_id == machine_id,
-        DowntimeLog.timestamp >= shift_start,
+        DowntimeLog.timestamp >= cutoff,
         DowntimeLog.timestamp <= shift_end,
     ).all()
 
@@ -283,6 +286,9 @@ def get_machine_downtime(machine_id):
     try:
         shift_type, shift_end = get_current_shift()
         shift_start = shift_end - timedelta(hours=11, minutes=50)
+        now = datetime.now()
+        # Буфер 10 сек: простои добавленные прямо сейчас считаются "будущими"
+        cutoff = now - timedelta(seconds=10)
 
         downtimes = (
             DowntimeLog.query.filter(
@@ -302,6 +308,7 @@ def get_machine_downtime(machine_id):
                     "duration_minutes": d.duration_minutes,
                     "timestamp": d.timestamp.isoformat(),
                     "note": d.note,
+                    "is_future": d.timestamp >= cutoff,
                 }
                 for d in downtimes
             ]
