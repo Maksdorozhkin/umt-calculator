@@ -780,9 +780,19 @@ header {
         font-size: 0.82rem;
     }
 
-    /*.results-panel {
-        grid-template-columns: 1fr;
-    }*/
+    .results-panel {
+        gap: 8px;
+        /*grid-template-columns: 1fr;*/
+    }
+    .result-card {
+        padding: 8px 8px;
+    }
+    .result-value {
+        font-size: 1.2rem;
+    }
+    .result-label {
+        font-size: 0.7rem;
+    }
 
     /*.form-row {
         grid-template-columns: 1fr;
