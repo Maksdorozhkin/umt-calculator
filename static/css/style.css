@@ -780,13 +780,13 @@ header {
         font-size: 0.82rem;
     }
 
-    .results-panel {
+    /*.results-panel {
         grid-template-columns: 1fr;
-    }
+    }*/
 
-    .form-row {
+    /*.form-row {
         grid-template-columns: 1fr;
-    }
+    }*/
 
     .machine-body {
         padding: 16px;
