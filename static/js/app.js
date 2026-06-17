@@ -845,9 +845,20 @@ function setupItemsCalculator() {
         const boxesPerPallet = parseInt(boxesPerPalletInput.value) || 0;
 
         const fivePercent = Math.round(totalOrder * 0.05);
-        const remainingPlusFive = remaining + fivePercent;
-        // Не даём уйти в минус: если 5% > оставшегося, результат = 0
-        const remainingMinusFive = Math.max(0, remaining - fivePercent);
+
+        let baseRemaining, remainingPlusFive, remainingMinusFive;
+
+        if (remaining < 0) {
+            // Осталось доделать |remaining| штук
+            baseRemaining = Math.abs(remaining);
+            remainingPlusFive = baseRemaining + fivePercent;
+            remainingMinusFive = Math.max(0, baseRemaining - fivePercent);
+        } else {
+            // Заказ выполнен + сверх (remaining штук сверх заказа)
+            baseRemaining = 0;
+            remainingPlusFive = Math.max(0, fivePercent - remaining);
+            remainingMinusFive = 0;
+        }
 
         document.getElementById("fivePercent").textContent =
             formatNumber(fivePercent);
@@ -870,7 +881,7 @@ function setupItemsCalculator() {
 
             // Базовый остаток
             const baseBreakdown = toPalletsBoxes(
-                remaining,
+                baseRemaining,
                 itemsPerBox,
                 boxesPerPallet,
             );
