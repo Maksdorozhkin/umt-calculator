@@ -861,10 +861,24 @@ function setupItemsCalculator() {
 
         const plusSection = document.getElementById("palletResults");
         const minusSection = document.getElementById("palletResultsMinus");
+        const baseSection = document.getElementById("palletResultsBase");
 
         if (hasPackingData) {
             plusSection.style.display = "block";
             minusSection.style.display = "block";
+            baseSection.style.display = "block";
+
+            // Базовый остаток
+            const baseBreakdown = toPalletsBoxes(
+                remaining,
+                itemsPerBox,
+                boxesPerPallet,
+            );
+            document.getElementById("basePallets").textContent =
+                formatNumber(baseBreakdown.pallets);
+            document.getElementById("baseBoxes").textContent = formatNumber(
+                baseBreakdown.boxes,
+            );
 
             const plusBreakdown = toPalletsBoxes(
                 remainingPlusFive,
