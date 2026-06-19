@@ -686,28 +686,68 @@ async function calculateTape() {
     const requiredPieces = parseInt(
         document.getElementById("requiredPieces").value,
     );
+    const tapeAvailable = parseFloat(
+        document.getElementById("tapeAvailable").value,
+    );
 
-    if (!avgWeight || isNaN(wastePercent) || !requiredPieces) {
-        showNotification("Заполните все поля", "error");
+    const hasPieces = requiredPieces && requiredPieces > 0;
+    const hasTape = tapeAvailable && tapeAvailable > 0;
+
+    if (!avgWeight || isNaN(wastePercent)) {
+        showNotification("Заполните вес и отходность", "error");
+        return;
+    }
+    if (!hasPieces && !hasTape) {
+        showNotification("Введите количество изделий или доступную ленту", "error");
+        return;
+    }
+    if (hasPieces && hasTape) {
+        showNotification("Заполни что то одно дубина!", "error");
         return;
     }
 
     try {
+        const payload = {
+            avg_weight: avgWeight,
+            waste_percent: wastePercent,
+        };
+
+        if (hasPieces) {
+            payload.required_pieces = requiredPieces;
+        } else {
+            payload.tape_available = tapeAvailable;
+        }
+
         const response = await fetch("/api/tape-calculation", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                avg_weight: avgWeight,
-                waste_percent: wastePercent,
-                required_pieces: requiredPieces,
-            }),
+            body: JSON.stringify(payload),
         });
 
         const result = await response.json();
-        document.getElementById("tapeNeeded").textContent =
-            result.tape_needed.toLocaleString("ru-RU");
-        document.getElementById("tapePlus10").textContent =
-            result.tape_plus_10.toLocaleString("ru-RU");
+        const forwardEl = document.getElementById("forwardResults");
+        const reverseEl = document.getElementById("reverseResults");
+
+        if (hasPieces) {
+            // Прямой расчёт: изделия → лента
+            document.getElementById("tapeNeeded").textContent =
+                result.tape_needed.toLocaleString("ru-RU");
+            document.getElementById("tapePlus10").textContent =
+                result.tape_plus_10.toLocaleString("ru-RU");
+            document.getElementById("droblenkaForward").textContent =
+                result.droblenka_output.toLocaleString("ru-RU");
+            forwardEl.style.display = "block";
+            reverseEl.style.display = "none";
+        } else {
+            // Обратный расчёт: лента → изделия
+            document.getElementById("piecesPossible").textContent =
+                result.pieces_possible.toLocaleString("ru-RU");
+            document.getElementById("droblenkaReverse").textContent =
+                result.droblenka_output.toLocaleString("ru-RU");
+            forwardEl.style.display = "none";
+            reverseEl.style.display = "block";
+        }
+
         document.getElementById("tapeResults").style.display = "grid";
         showNotification("Расчет выполнен", "success");
     } catch (error) {

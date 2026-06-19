@@ -316,7 +316,19 @@
                                 id="requiredPieces"
                                 min="1"
                                 placeholder="Например: 1000"
-                                required
+                            />
+                        </div>
+                        <div class="form-group">
+                            <label for="tapeAvailable"
+                                >Доступно ленты (кг)</label
+                            >
+                            <input
+                                type="number"
+                                inputmode="decimal"
+                                id="tapeAvailable"
+                                step="0.1"
+                                min="0.1"
+                                placeholder="Например: 1167"
                             />
                         </div>
                         <div class="form-actions">
@@ -333,13 +345,31 @@
                         id="tapeResults"
                         style="display: none"
                     >
-                        <div class="result-card">
-                            <div class="result-value" id="tapeNeeded">0</div>
-                            <div class="result-label">Необходимо ленты (г)</div>
+                        <!-- Прямой расчёт: изделия → лента -->
+                        <div id="forwardResults" style="display: none">
+                            <div class="result-card">
+                                <div class="result-value" id="tapeNeeded">0</div>
+                                <div class="result-label">Необходимо ленты (кг)</div>
+                            </div>
+                            <div class="result-card highlight">
+                                <div class="result-value" id="tapePlus10">0</div>
+                                <div class="result-label">С запасом +10% (кг)</div>
+                            </div>
+                            <div class="result-card">
+                                <div class="result-value" id="droblenkaForward">0</div>
+                                <div class="result-label">Отход / дроблёнка (кг)</div>
+                            </div>
                         </div>
-                        <div class="result-card highlight">
-                            <div class="result-value" id="tapePlus10">0</div>
-                            <div class="result-label">С запасом +10% (г)</div>
+                        <!-- Обратный расчёт: лента → изделия -->
+                        <div id="reverseResults" style="display: none">
+                            <div class="result-card highlight">
+                                <div class="result-value" id="piecesPossible">0</div>
+                                <div class="result-label">Возможно произвести изделий</div>
+                            </div>
+                            <div class="result-card">
+                                <div class="result-value" id="droblenkaReverse">0</div>
+                                <div class="result-label">Отход / дроблёнка (кг)</div>
+                            </div>
                         </div>
                     </div>
                 </div>

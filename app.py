@@ -361,44 +361,70 @@ def calculate_tape():
         data = request.json
         avg_weight = float(data["avg_weight"])
         waste_percent = float(data["waste_percent"])
-        required_pieces = int(data["required_pieces"])
 
-        # 1. Вычисляем чистый вес всей готовой партии в кг
-        pure_total_weight_kg = (avg_weight * required_pieces) / 1000
+        # Прямой расчёт: изделия → лента
+        if "required_pieces" in data:
+            required_pieces = int(data["required_pieces"])
 
-        # 2. Рассчитываем базовую потребность по формуле баланса массы
-        base_tape_needed = pure_total_weight_kg / (1 - (waste_percent / 100))
+            # 1. Вычисляем чистый вес всей готовой партии в кг
+            pure_total_weight_kg = (avg_weight * required_pieces) / 1000
 
-        # 3. Применяем скрытый технологический коэффициент 1.05 (зашитый в таблицу запас 5%)
-        # Для теста (10г, 10%, 100к шт) это даст ровно 1166.67 кг (в Excel округлено до 1167)
-        tape_needed = base_tape_needed * 1.05
+            # 2. Рассчитываем базовую потребность по формуле баланса массы
+            base_tape_needed = pure_total_weight_kg / (1 - (waste_percent / 100))
 
-        # 4. Считаем выход дробленки (Разница между зашедшей лентой и чистым весом)
-        # Для теста: 1166.67 - 1000 = 166.67 кг
-        droblenka_output = tape_needed - pure_total_weight_kg
+            # 3. Применяем скрытый технологический коэффициент 1.05
+            tape_needed = base_tape_needed * 1.05
 
-        # 5. надбавка +10% поверх заводского норматива Excel
-        tape_plus_10 = tape_needed * 1.1
+            # 4. Считаем выход дробленки
+            droblenka_output = tape_needed - pure_total_weight_kg
 
-        # Сохраняем расчет в базу данных
-        calc = TapeCalculation(
-            avg_weight=avg_weight,
-            waste_percent=waste_percent,
-            required_pieces=required_pieces,
-            result_tape=round(tape_needed, 2),
-            result_tape_plus_10=round(tape_plus_10, 2),
-        )
-        db.session.add(calc)
-        db.session.commit()
+            # 5. надбавка +10% поверх заводского норматива
+            tape_plus_10 = tape_needed * 1.1
 
-        # Возвращаем результат, округленный до 2 знаков
-        return jsonify(
-            {
-                "tape_needed": round(tape_needed, 2),
-                "droblenka_output": round(droblenka_output, 2),
-                "tape_plus_10": round(tape_plus_10, 2),
-            }
-        )
+            # Сохраняем расчет в базу данных
+            calc = TapeCalculation(
+                avg_weight=avg_weight,
+                waste_percent=waste_percent,
+                required_pieces=required_pieces,
+                result_tape=round(tape_needed, 2),
+                result_tape_plus_10=round(tape_plus_10, 2),
+            )
+            db.session.add(calc)
+            db.session.commit()
+
+            return jsonify(
+                {
+                    "tape_needed": round(tape_needed, 2),
+                    "droblenka_output": round(droblenka_output, 2),
+                    "tape_plus_10": round(tape_plus_10, 2),
+                }
+            )
+
+        # Обратный расчёт: лента → изделия
+        elif "tape_available" in data:
+            tape_available = float(data["tape_available"])
+
+            # 1. Убираем технологический коэффициент
+            base_tape = tape_available / 1.05
+
+            # 2. Чистый вес готовой продукции
+            pure_weight_kg = base_tape * (1 - (waste_percent / 100))
+
+            # 3. Количество изделий
+            pieces_possible = int(pure_weight_kg * 1000 / avg_weight)
+
+            # 4. Дробленка (отход) при использовании всей доступной ленты
+            droblenka_output = tape_available - (pieces_possible * avg_weight / 1000)
+
+            return jsonify(
+                {
+                    "pieces_possible": pieces_possible,
+                    "droblenka_output": round(droblenka_output, 2),
+                }
+            )
+
+        else:
+            return jsonify({"error": "Укажите required_pieces или tape_available"}), 400
 
     except Exception as e:
         db.session.rollback()
