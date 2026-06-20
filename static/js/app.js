@@ -292,7 +292,16 @@ function setupTapeForm() {
 
     form.addEventListener("reset", function () {
         setTimeout(() => {
+            // Скрыть все результаты
             document.getElementById("tapeResults").style.display = "none";
+            document.getElementById("forwardResults").style.display = "none";
+            document.getElementById("reverseResults").style.display = "none";
+            document.getElementById("droblenkaCard").style.display = "none";
+            // Обнулить значения
+            document.getElementById("tapeNeeded").textContent = "0";
+            document.getElementById("tapePlus10").textContent = "0";
+            document.getElementById("piecesPossible").textContent = "0";
+            document.getElementById("droblenkaValue").textContent = "0";
         }, 10);
     });
 }
@@ -734,19 +743,19 @@ async function calculateTape() {
                 result.tape_needed.toLocaleString("ru-RU");
             document.getElementById("tapePlus10").textContent =
                 result.tape_plus_10.toLocaleString("ru-RU");
-            document.getElementById("droblenkaForward").textContent =
-                result.droblenka_output.toLocaleString("ru-RU");
             forwardEl.style.display = "block";
             reverseEl.style.display = "none";
         } else {
             // Обратный расчёт: лента → изделия
             document.getElementById("piecesPossible").textContent =
                 result.pieces_possible.toLocaleString("ru-RU");
-            document.getElementById("droblenkaReverse").textContent =
-                result.droblenka_output.toLocaleString("ru-RU");
             forwardEl.style.display = "none";
             reverseEl.style.display = "block";
         }
+        // Общий отход / дроблёнка
+        document.getElementById("droblenkaValue").textContent =
+            result.droblenka_output.toLocaleString("ru-RU");
+        document.getElementById("droblenkaCard").style.display = "block";
 
         document.getElementById("tapeResults").style.display = "grid";
         showNotification("Расчет выполнен", "success");

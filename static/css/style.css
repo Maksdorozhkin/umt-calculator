@@ -570,6 +570,20 @@ header {
     color: var(--text-primary);
 }
 
+/* Результаты калькулятора ленты — центрирование */
+#tapeResults {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
+    justify-content: center;
+    gap: 12px;
+    animation: fadeIn 0.4s ease;
+}
+
+#forwardResults,
+#reverseResults {
+    display: contents !important;
+}
+
 /* ===== Reference Panel ===== */
 .reference-panel {
     background: var(--bg-card);
