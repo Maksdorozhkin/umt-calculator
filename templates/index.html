@@ -170,7 +170,7 @@
                                     >
                                 </div>
                                 <div class="hourly-rate-bar">
-                                    <span>📦 Произв./час:</span>
+                                    <span>📦 Пр./час:</span>
                                     <span
                                         class="time-value"
                                         id="hourlyRate{{ machine.id }}"
@@ -356,25 +356,45 @@
                         <!-- Прямой расчёт: изделия → лента -->
                         <div id="forwardResults" style="display: none">
                             <div class="result-card">
-                                <div class="result-value" id="tapeNeeded">0</div>
-                                <div class="result-label">Необходимо ленты (кг)</div>
+                                <div class="result-value" id="tapeNeeded">
+                                    0
+                                </div>
+                                <div class="result-label">
+                                    Необходимо ленты (кг)
+                                </div>
                             </div>
                             <div class="result-card">
-                                <div class="result-value" id="tapePlus10">0</div>
-                                <div class="result-label">С запасом +10% (кг)</div>
+                                <div class="result-value" id="tapePlus10">
+                                    0
+                                </div>
+                                <div class="result-label">
+                                    С запасом +10% (кг)
+                                </div>
                             </div>
                         </div>
                         <!-- Обратный расчёт: лента → изделия -->
                         <div id="reverseResults" style="display: none">
                             <div class="result-card">
-                                <div class="result-value" id="piecesPossible">0</div>
-                                <div class="result-label">Возможно произвести изделий</div>
+                                <div class="result-value" id="piecesPossible">
+                                    0
+                                </div>
+                                <div class="result-label">
+                                    Возможно произвести изделий
+                                </div>
                             </div>
                         </div>
                         <!-- Общий блок отхода -->
-                        <div class="result-card" id="droblenkaCard" style="display: none">
-                            <div class="result-value" id="droblenkaValue">0</div>
-                            <div class="result-label">Отход / дроблёнка (кг)</div>
+                        <div
+                            class="result-card"
+                            id="droblenkaCard"
+                            style="display: none"
+                        >
+                            <div class="result-value" id="droblenkaValue">
+                                0
+                            </div>
+                            <div class="result-label">
+                                Отход / дроблёнка (кг)
+                            </div>
                         </div>
                     </div>
                 </div>
