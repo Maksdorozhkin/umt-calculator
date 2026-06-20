@@ -396,6 +396,20 @@ header {
     flex: 1;
 }
 
+.hourly-rate-bar {
+    background: rgba(42, 157, 143, 0.1);
+    border: 1px solid var(--success);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    font-weight: 480;
+    color: var(--success);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex: 1;
+}
+
 .time-value {
     font-size: 1.1rem;
     font-weight: 800;
@@ -787,17 +801,19 @@ header {
     }
 
     .time-info {
-        gap: 6px;
+        gap: 4px;
+        margin: 12px 0;
     }
 
     .available-time,
-    .total-downtime-bar {
-        padding: 8px 10px;
-        font-size: 0.78rem;
+    .total-downtime-bar,
+    .hourly-rate-bar {
+        padding: 6px 8px;
+        font-size: 0.72rem;
     }
 
     .time-info .time-value {
-        font-size: 0.95rem;
+        font-size: 0.85rem;
     }
     .tab-btn {
         padding: 7px 12px;

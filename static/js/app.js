@@ -111,6 +111,44 @@ function updateAvailableTime(machineId) {
     // Общий простой = ВСЕ простои за смену (и прошедшие, и будущие)
     const allDowntime = getTotalDowntimeAllForMachine(machineId);
     totalEl.textContent = allDowntime > 0 ? `${allDowntime} мин` : "0 мин";
+
+    // Обновить производительность в час
+    updateHourlyRate(machineId);
+}
+
+// Производительность в час: кавитации × такты/мин × 60 = шт/час
+// Формат: "2п. 4кор." / "14кор." / "38шт."
+function updateHourlyRate(machineId) {
+    const el = document.getElementById(`hourlyRate${machineId}`);
+    if (!el) return;
+
+    const cavitations = parseInt(
+        document.getElementById(`cavitations${machineId}`)?.value,
+    ) || 0;
+    const cycles =
+        parseFloat(document.getElementById(`cycles${machineId}`)?.value) || 0;
+    const piecesPerBox =
+        parseInt(document.getElementById(`piecesPerBox${machineId}`)?.value) || 1;
+    const boxesPerPallet =
+        parseInt(document.getElementById(`boxesPerPallet${machineId}`)?.value) || 1;
+
+    if (cavitations === 0 || cycles === 0) {
+        el.textContent = "--";
+        return;
+    }
+
+    const piecesPerHour = cavitations * cycles * 60;
+    const boxesPerHour = piecesPerHour / piecesPerBox;
+    const pallets = Math.floor(boxesPerHour / boxesPerPallet);
+    const boxes = Math.floor(boxesPerHour % boxesPerPallet);
+
+    if (pallets > 0) {
+        el.textContent = `${pallets}п. ${boxes}кор.`;
+    } else if (boxesPerHour >= 1) {
+        el.textContent = `${Math.floor(boxesPerHour)}кор.`;
+    } else {
+        el.textContent = `${Math.floor(piecesPerHour)}шт.`;
+    }
 }
 
 // Переключение вкладок
@@ -220,6 +258,7 @@ function fillProductData(machineId, product) {
         product.pieces_per_box;
     document.getElementById(`boxesPerPallet${machineId}`).value =
         product.boxes_per_pallet;
+    updateHourlyRate(machineId);
 }
 
 function escapeHtml(text) {
@@ -557,6 +596,7 @@ function resetCalculator(machineId) {
     document.getElementById(`pieces${machineId}`).textContent = "0";
     const resultsPanel = document.getElementById(`results${machineId}`);
     if (resultsPanel) resultsPanel.style.display = "none";
+    updateHourlyRate(machineId);
     showNotification("Калькулятор сброшен", "success");
 }
 

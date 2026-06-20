@@ -60,7 +60,7 @@ MACHINES = [1, 2, 3, 4, 5, 6, 7]
 def get_current_shift():
     """Определяет текущую смену (День/Ночь) и рассчитывает время окончания с учетом смещения в -10 минут."""
     now = datetime.now()
-    BOUNDARY_HOUR = 20  # Конечная граница дня / начало ночи (20:00)
+    BOUNDARY_HOUR = 20  # Конец дня / начало ночи (20:00)
     SHIFT_END_ADJUSTMENT = timedelta(minutes=10)
 
     hour = now.hour
