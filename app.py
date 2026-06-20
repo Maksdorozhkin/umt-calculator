@@ -1,9 +1,10 @@
+import markdown
 import math
 import os
 import sqlite3
 from datetime import datetime, timedelta
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, render_template_string, request
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
@@ -429,6 +430,35 @@ def calculate_tape():
     except Exception as e:
         db.session.rollback()
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/about")
+def about():
+    """Страница с README.md, отрендеренным через markdown"""
+    readme_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "README.md")
+    with open(readme_path, "r", encoding="utf-8") as f:
+        md_text = f.read()
+    html_body = markdown.markdown(md_text)
+    return render_template_string(
+        """
+        <!doctype html>
+        <html lang="ru">
+        <head>
+            <meta charset="UTF-8"/>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+            <title>UMT — О приложении</title>
+            <link rel="stylesheet" href="/static/css/style.css"/>
+        </head>
+        <body>
+            <div class="about-page">
+                <a href="/" class="about-back">← Назад</a>
+                {{ content|safe }}
+            </div>
+        </body>
+        </html>
+        """,
+        content=html_body,
+    )
 
 
 @app.route("/api/reset-database", methods=["POST"])

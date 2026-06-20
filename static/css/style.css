@@ -410,6 +410,94 @@ header {
     flex: 1;
 }
 
+/* ===== Footer ===== */
+.app-footer {
+    text-align: center;
+    padding: 24px 16px;
+    margin-top: 20px;
+    border-top: 1px solid var(--border);
+}
+
+.app-footer a {
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.app-footer a:hover {
+    text-decoration: underline;
+}
+
+/* ===== About Page ===== */
+.about-page {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 24px 20px;
+    color: var(--text);
+    line-height: 1.6;
+}
+
+.about-back {
+    display: inline-block;
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+}
+
+.about-back:hover {
+    text-decoration: underline;
+}
+
+.about-page h1 {
+    font-size: 1.6rem;
+    margin-bottom: 16px;
+    color: var(--accent);
+}
+
+.about-page h2 {
+    font-size: 1.3rem;
+    margin-top: 24px;
+    margin-bottom: 10px;
+    color: var(--text);
+}
+
+.about-page h3 {
+    font-size: 1.1rem;
+    margin-top: 18px;
+    margin-bottom: 8px;
+}
+
+.about-page ul {
+    padding-left: 20px;
+    margin: 8px 0;
+}
+
+.about-page li {
+    margin-bottom: 4px;
+}
+
+.about-page pre {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    overflow-x: auto;
+    font-size: 0.85rem;
+}
+
+.about-page code {
+    background: var(--bg-card);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+}
+
+.about-page strong {
+    color: var(--accent);
+}
+
 .time-value {
     font-size: 1.1rem;
     font-weight: 800;
