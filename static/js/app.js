@@ -728,12 +728,23 @@ async function loadDowntimeLog(machineId) {
     }
 }
 
-// === Расчёт веса рулона (ПВХ) ===
-// Формула: π × (R² - r²) × ширина × 0.00091
+// === Расчёт веса рулона ===
+// Формула: π × (R² - r²) × ширина × коэффициент_плотности
 // R — внешний радиус рулона (см), r — радиус бобины (9.2 см)
-function calculateRollWeight(outerRadiusCm, widthCm) {
+// PP: 0.00091, PET: 0.00138
+const TAPE_DENSITY = {
+    pp: 0.00091,
+    pet: 0.00138,
+};
+
+function getSelectedTapeType() {
+    const isPet = document.getElementById("isPetTape").checked;
+    return isPet ? "pet" : "pp";
+}
+
+function calculateRollWeight(outerRadiusCm, widthCm, tapeType = "pp") {
     const CORE_RADIUS_CM = 9.2;
-    const DENSITY_COEFF = 0.00091;
+    const DENSITY_COEFF = TAPE_DENSITY[tapeType] || TAPE_DENSITY["pp"];
 
     if (!outerRadiusCm || !widthCm || outerRadiusCm <= 0 || widthCm <= 0) {
         return null;
@@ -770,7 +781,8 @@ async function calculateTape() {
 
     // Если заполнены только радиус/ширина — режим расчёта веса рулона
     if (!avgWeight && isNaN(wastePercent) && !hasPieces && !hasTape && hasRollDims) {
-        const rollWeight = calculateRollWeight(outerRadiusCm, widthCm);
+        const tapeType = getSelectedTapeType();
+        const rollWeight = calculateRollWeight(outerRadiusCm, widthCm, tapeType);
         if (rollWeight !== null) {
             document.getElementById("rollWeightValue").textContent =
                 rollWeight.toLocaleString("ru-RU", {
@@ -844,7 +856,8 @@ async function calculateTape() {
         document.getElementById("droblenkaCard").style.display = "block";
 
         // Вес рулона (если заполнены внешний радиус и ширина)
-        const rollWeight = calculateRollWeight(outerRadiusCm, widthCm);
+        const tapeType = getSelectedTapeType();
+        const rollWeight = calculateRollWeight(outerRadiusCm, widthCm, tapeType);
         if (rollWeight !== null) {
             document.getElementById("rollWeightValue").textContent =
                 rollWeight.toLocaleString("ru-RU", {
