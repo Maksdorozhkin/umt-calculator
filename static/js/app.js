@@ -336,11 +336,13 @@ function setupTapeForm() {
             document.getElementById("forwardResults").style.display = "none";
             document.getElementById("reverseResults").style.display = "none";
             document.getElementById("droblenkaCard").style.display = "none";
+            document.getElementById("rollWeightCard").style.display = "none";
             // Обнулить значения
             document.getElementById("tapeNeeded").textContent = "0";
             document.getElementById("tapePlus10").textContent = "0";
             document.getElementById("piecesPossible").textContent = "0";
             document.getElementById("droblenkaValue").textContent = "0";
+            document.getElementById("rollWeightValue").textContent = "0";
         }, 10);
     });
 }
@@ -726,6 +728,22 @@ async function loadDowntimeLog(machineId) {
     }
 }
 
+// === Расчёт веса рулона (ПВХ) ===
+// Формула: π × (R² - r²) × ширина × 0.00091
+// R — внешний радиус рулона (см), r — радиус бобины (9.2 см)
+function calculateRollWeight(outerRadiusCm, widthCm) {
+    const CORE_RADIUS_CM = 9.2;
+    const DENSITY_COEFF = 0.00091;
+
+    if (!outerRadiusCm || !widthCm || outerRadiusCm <= 0 || widthCm <= 0) {
+        return null;
+    }
+
+    const weightKg = Math.PI * (outerRadiusCm * outerRadiusCm - CORE_RADIUS_CM * CORE_RADIUS_CM) * widthCm * DENSITY_COEFF;
+
+    return Math.round(weightKg * 100) / 100;
+}
+
 // Калькулятор ленты
 async function calculateTape() {
     const avgWeight = parseFloat(document.getElementById("avgWeight").value);
@@ -739,9 +757,37 @@ async function calculateTape() {
         document.getElementById("tapeAvailable").value,
     );
 
+    const outerRadiusCm = parseFloat(
+        document.getElementById("outerRadius").value,
+    );
+    const widthCm = parseFloat(
+        document.getElementById("tapeWidth").value,
+    );
+
     const hasPieces = requiredPieces && requiredPieces > 0;
     const hasTape = tapeAvailable && tapeAvailable > 0;
+    const hasRollDims = outerRadiusCm && outerRadiusCm > 0 && widthCm && widthCm > 0;
 
+    // Если заполнены только радиус/ширина — режим расчёта веса рулона
+    if (!avgWeight && isNaN(wastePercent) && !hasPieces && !hasTape && hasRollDims) {
+        const rollWeight = calculateRollWeight(outerRadiusCm, widthCm);
+        if (rollWeight !== null) {
+            document.getElementById("rollWeightValue").textContent =
+                rollWeight.toLocaleString("ru-RU", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                });
+            document.getElementById("rollWeightCard").style.display = "block";
+        }
+        document.getElementById("forwardResults").style.display = "none";
+        document.getElementById("reverseResults").style.display = "none";
+        document.getElementById("droblenkaCard").style.display = "none";
+        document.getElementById("tapeResults").style.display = "grid";
+        showNotification("Расчет веса рулона выполнен", "success");
+        return;
+    }
+
+    // Обычный режим: нужен вес, отходность и одно из (изделия / лента)
     if (!avgWeight || isNaN(wastePercent)) {
         showNotification("Заполните вес и отходность", "error");
         return;
@@ -796,6 +842,19 @@ async function calculateTape() {
         document.getElementById("droblenkaValue").textContent =
             result.droblenka_output.toLocaleString("ru-RU");
         document.getElementById("droblenkaCard").style.display = "block";
+
+        // Вес рулона (если заполнены внешний радиус и ширина)
+        const rollWeight = calculateRollWeight(outerRadiusCm, widthCm);
+        if (rollWeight !== null) {
+            document.getElementById("rollWeightValue").textContent =
+                rollWeight.toLocaleString("ru-RU", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                });
+            document.getElementById("rollWeightCard").style.display = "block";
+        } else {
+            document.getElementById("rollWeightCard").style.display = "none";
+        }
 
         document.getElementById("tapeResults").style.display = "grid";
         showNotification("Расчет выполнен", "success");
