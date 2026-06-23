@@ -729,30 +729,39 @@ async function loadDowntimeLog(machineId) {
 }
 
 // === Расчёт веса рулона ===
-// Формула: π × (R² - r²) × ширина × коэффициент_плотности
-// R — внешний радиус рулона (см), r — радиус бобины (9.2 см)
-// PP: 0.00091, PET: 0.00138
-const TAPE_DENSITY = {
-    pp: 0.00091,
-    pet: 0.00138,
-};
+// ПП: заводская Excel-формула, D_шпули = 18 см (r = 9 см)
+//   вес = ((t×2 + 18)² - 324) × w / 1413
+// ПЭТ: D_шпули = 16 см (r = 8 см), заводского коэффициента нет
+//   вес = π × ((t + 8)² - 8²) × w × 0.00138
+// t — толщина намотки от края втулки до внешнего края рулона (см)
 
 function getSelectedTapeType() {
     const isPet = document.getElementById("isPetTape").checked;
     return isPet ? "pet" : "pp";
 }
 
-function calculateRollWeight(outerRadiusCm, widthCm, tapeType = "pp") {
-    const CORE_RADIUS_CM = 9.2;
-    const DENSITY_COEFF = TAPE_DENSITY[tapeType] || TAPE_DENSITY["pp"];
-
-    if (!outerRadiusCm || !widthCm || outerRadiusCm <= 0 || widthCm <= 0) {
+function calculateRollWeight(thicknessCm, widthCm, tapeType = "pp") {
+    if (!thicknessCm || !widthCm || thicknessCm <= 0 || widthCm <= 0) {
         return null;
     }
 
-    const weightKg = Math.PI * (outerRadiusCm * outerRadiusCm - CORE_RADIUS_CM * CORE_RADIUS_CM) * widthCm * DENSITY_COEFF;
+    let weightKg;
 
-    return Math.round(weightKg * 100) / 100;
+    if (tapeType === "pp") {
+        // Заводская формула из Excel для ПП (D_шпули = 18 см)
+        const outerDiameterSquared = Math.pow((thicknessCm * 2) + 18, 2);
+        const netVolumeFactor = outerDiameterSquared - 324; // 324 = 18²
+        weightKg = (netVolumeFactor * widthCm) / 1413;
+    } else {
+        // ПЭТ: D_шпули = 16 см, r = 8 см — заводского коэффициента нет
+        const outerRadiusCm = thicknessCm + 8;
+        const coreRadiusCm = 8;
+        weightKg = Math.PI *
+            (outerRadiusCm * outerRadiusCm - coreRadiusCm * coreRadiusCm) *
+            widthCm * 0.00138;
+    }
+
+    return parseFloat(weightKg.toFixed(2));
 }
 
 // Калькулятор ленты
@@ -768,7 +777,7 @@ async function calculateTape() {
         document.getElementById("tapeAvailable").value,
     );
 
-    const outerRadiusCm = parseFloat(
+    const thicknessCm = parseFloat(
         document.getElementById("outerRadius").value,
     );
     const widthCm = parseFloat(
@@ -777,12 +786,12 @@ async function calculateTape() {
 
     const hasPieces = requiredPieces && requiredPieces > 0;
     const hasTape = tapeAvailable && tapeAvailable > 0;
-    const hasRollDims = outerRadiusCm && outerRadiusCm > 0 && widthCm && widthCm > 0;
+    const hasRollDims = thicknessCm && thicknessCm > 0 && widthCm && widthCm > 0;
 
-    // Если заполнены только радиус/ширина — режим расчёта веса рулона
+    // Если заполнены только толщина/ширина — режим расчёта веса рулона
     if (!avgWeight && isNaN(wastePercent) && !hasPieces && !hasTape && hasRollDims) {
         const tapeType = getSelectedTapeType();
-        const rollWeight = calculateRollWeight(outerRadiusCm, widthCm, tapeType);
+        const rollWeight = calculateRollWeight(thicknessCm, widthCm, tapeType);
         if (rollWeight !== null) {
             document.getElementById("rollWeightValue").textContent =
                 rollWeight.toLocaleString("ru-RU", {
@@ -855,9 +864,9 @@ async function calculateTape() {
             result.droblenka_output.toLocaleString("ru-RU");
         document.getElementById("droblenkaCard").style.display = "block";
 
-        // Вес рулона (если заполнены внешний радиус и ширина)
+        // Вес рулона (если заполнены толщина намотки и ширина)
         const tapeType = getSelectedTapeType();
-        const rollWeight = calculateRollWeight(outerRadiusCm, widthCm, tapeType);
+        const rollWeight = calculateRollWeight(thicknessCm, widthCm, tapeType);
         if (rollWeight !== null) {
             document.getElementById("rollWeightValue").textContent =
                 rollWeight.toLocaleString("ru-RU", {
