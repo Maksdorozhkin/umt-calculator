@@ -170,7 +170,7 @@
                                     >
                                 </div>
                                 <div class="hourly-rate-bar">
-                                    <span>📦 Пр./час:</span>
+                                    <span>В час:</span>
                                     <span
                                         class="time-value"
                                         id="hourlyRate{{ machine.id }}"
@@ -297,7 +297,7 @@
                                 id="avgWeight"
                                 step="0.01"
                                 min="0.01"
-                                placeholder="Например: 15.5"
+                                placeholder="Ср.вес"
                             />
                         </div>
                         <div class="form-group">
@@ -309,7 +309,7 @@
                                 step="0.1"
                                 min="0"
                                 max="100"
-                                placeholder="Например: 5"
+                                placeholder="Отходность"
                             />
                         </div>
                         <div class="form-group">
@@ -321,7 +321,7 @@
                                 inputmode="numeric"
                                 id="requiredPieces"
                                 min="1"
-                                placeholder="Например: 1000"
+                                placeholder=""
                             />
                         </div>
                         <div class="form-group">
@@ -334,7 +334,7 @@
                                 id="tapeAvailable"
                                 step="0.1"
                                 min="0.1"
-                                placeholder="Например: 1167"
+                                placeholder=""
                             />
                         </div>
                         <!-- Тип ленты (ПП / ПЭТ) -->
@@ -348,25 +348,25 @@
                         <!-- Радиус и ширина рулона -->
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="outerRadius">Толщина намотки (см)</label>
+                                <label for="outerRadius">Толщина(см)</label>
                                 <input
                                     type="number"
                                     inputmode="decimal"
                                     id="outerRadius"
                                     step="0.1"
                                     min="1"
-                                    placeholder="От края втулки до края рулона"
+                                    placeholder=""
                                 />
                             </div>
                             <div class="form-group">
-                                <label for="tapeWidth">Ширина рулона (см)</label>
+                                <label for="tapeWidth">Ширина(см)</label>
                                 <input
                                     type="number"
                                     inputmode="decimal"
                                     id="tapeWidth"
                                     step="0.1"
                                     min="0.1"
-                                    placeholder="Например: 80"
+                                    placeholder=""
                                 />
                             </div>
                         </div>
