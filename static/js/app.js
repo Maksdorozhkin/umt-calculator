@@ -729,15 +729,22 @@ async function loadDowntimeLog(machineId) {
 }
 
 // === Расчёт веса рулона ===
-// ПП: заводская Excel-формула, D_шпули = 18 см (r = 9 см)
+// ПП (обычная): заводская Excel-формула, D_шпули = 18 см
 //   вес = ((t×2 + 18)² - 324) × w / 1413
-// ПЭТ: D_шпули = 16 см (r = 8 см), заводского коэффициента нет
-//   вес = π × ((t + 8)² - 8²) × w × 0.00138
+// ПП (железная шпуля): D_шпули = 16 см
+//   вес = ((t×2 + 16)² - 256) × w / 1413
+// ПЭТ: заводского коэффициента нет
+//   вес = π × ((t + 16)² - 256) × w × 0.00138
 // t — толщина намотки от края втулки до внешнего края рулона (см)
 
 function getSelectedTapeType() {
     const isPet = document.getElementById("isPetTape").checked;
     return isPet ? "pet" : "pp";
+}
+
+function getIronSpoolChecked() {
+    const ironSpool = document.getElementById("isIronSpool");
+    return ironSpool ? ironSpool.checked : false;
 }
 
 function calculateRollWeight(thicknessCm, widthCm, tapeType = "pp") {
@@ -746,16 +753,22 @@ function calculateRollWeight(thicknessCm, widthCm, tapeType = "pp") {
     }
 
     let weightKg;
+    const ironSpool = getIronSpoolChecked();
 
-    if (tapeType === "pp") {
+    if (tapeType === "pp" && !ironSpool) {
         // Заводская формула из Excel для ПП (D_шпули = 18 см)
         const outerDiameterSquared = Math.pow((thicknessCm * 2) + 18, 2);
         const netVolumeFactor = outerDiameterSquared - 324; // 324 = 18²
         weightKg = (netVolumeFactor * widthCm) / 1413;
+    } else if (tapeType === "pp" && ironSpool) {
+        // ПП с железной шпулей: D_шпули = 16 см
+        const outerDiameterSquared = Math.pow((thicknessCm * 2) + 16, 2);
+        const netVolumeFactor = outerDiameterSquared - 256; // 256 = 16²
+        weightKg = (netVolumeFactor * widthCm) / 1413;
     } else {
-        // ПЭТ: D_шпули = 16 см, r = 8 см — заводского коэффициента нет
-        const outerRadiusCm = thicknessCm + 8;
-        const coreRadiusCm = 8;
+        // ПЭТ: заводского коэффициента нет
+        const outerRadiusCm = thicknessCm + 16;
+        const coreRadiusCm = 16;
         weightKg = Math.PI *
             (outerRadiusCm * outerRadiusCm - coreRadiusCm * coreRadiusCm) *
             widthCm * 0.00138;
