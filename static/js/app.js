@@ -167,7 +167,7 @@ function setupTabs() {
             const targetContent = document.getElementById(target);
             if (targetContent) targetContent.classList.add("active");
 
-            if (target !== "tape" && target !== "reference") {
+            if (target !== "tape" && target !== "reference" && target !== "items-calc") {
                 currentMachine = parseInt(target.replace("machine", ""));
                 loadMachineProduct(currentMachine);
                 loadDowntimeLog(currentMachine);
@@ -980,33 +980,10 @@ window.resetDatabase = async function () {
 };
 // Калькулятор изделий
 function setupItemsCalculator() {
-    const openBtn = document.getElementById("openItemsCalcBtn");
-    const modal = document.getElementById("itemsCalcModal");
-    const closeBtn = document.getElementById("closeItemsCalc");
     const totalOrderInput = document.getElementById("totalOrder");
     const remainingInput = document.getElementById("remainingItems");
     const itemsPerBoxInput = document.getElementById("itemsPerBox");
     const boxesPerPalletInput = document.getElementById("boxesPerPallet");
-
-    if (openBtn) {
-        openBtn.addEventListener("click", () => {
-            modal.style.display = "flex";
-        });
-    }
-
-    if (closeBtn) {
-        closeBtn.addEventListener("click", () => {
-            modal.style.display = "none";
-        });
-    }
-
-    if (modal) {
-        modal.addEventListener("click", function (e) {
-            if (e.target === modal) {
-                modal.style.display = "none";
-            }
-        });
-    }
 
     // Форматирование числа с пробелами-разделителями: 1000000 -> 1 000 000
     function formatNumber(num) {

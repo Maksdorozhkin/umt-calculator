@@ -36,7 +36,7 @@
                     🔄
                 </button>
             </div>
-            <button class="tab-btn" id="openItemsCalcBtn">
+            <button class="tab-btn" data-tab="items-calc">
                 🧮 Калькулятор Изделий
             </button>
             <button class="tab-btn" data-tab="tape">
@@ -567,16 +567,10 @@
             </div>
         </main>
 
-        <!-- Items Calculator Modal -->
-        <div class="modal-overlay" id="itemsCalcModal" style="display: none">
-            <div class="modal">
-                <div class="modal-header">
-                    <h3>🧮 Калькулятор изделий</h3>
-                    <button class="modal-close" id="closeItemsCalc">
-                        &times;
-                    </button>
-                </div>
-                <div class="modal-body">
+        <!-- Items Calculator -->
+        <div class="tab-content" id="items-calc">
+            <div class="tape-calculator">
+                <h2>🧮 Калькулятор изделий</h2>
                     <div class="form-group">
                         <label for="totalOrder">Весь заказ</label>
                         <input
