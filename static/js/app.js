@@ -98,22 +98,59 @@ function formatTimeShort(minutes) {
 }
 
 function updateAvailableTime(machineId) {
-    const availEl = document.getElementById(`availTime${machineId}`);
-    const totalEl = document.getElementById(`totalDowntime${machineId}`);
-    if (!availEl) return;
+    // Обновляем ВСЕ машины, а не только одну
+    for (let i = 1; i <= 7; i++) {
+        const totalEl = document.getElementById(`totalDowntime${i}`);
+        if (!totalEl) continue;
 
-    const remaining = getRemainingMinutes();
-    // Доступное время = осталось - только будущие простои
-    const futureDowntime = getTotalDowntimeForMachine(machineId);
-    const effective = Math.max(0, remaining - futureDowntime);
+        const remaining = getRemainingMinutes();
 
-    availEl.textContent = formatTimeShort(effective);
-    // Общий простой = ВСЕ простои за смену (и прошедшие, и будущие)
-    const allDowntime = getTotalDowntimeAllForMachine(machineId);
-    totalEl.textContent = allDowntime > 0 ? `${allDowntime} мин` : "0 мин";
+        // Общий простой = ВСЕ простои за смену (и прошедшие, и будущие)
+        const allDowntime = getTotalDowntimeAllForMachine(i);
+        totalEl.textContent = allDowntime > 0 ? `${allDowntime} мин` : "0 мин";
 
-    // Обновить производительность в час
-    updateHourlyRate(machineId);
+        // Обновить выпуск за смену (паллеты + коробки)
+        updateShiftOutput(i);
+
+        // Обновить производительность в час
+        updateHourlyRate(i);
+    }
+}
+
+// Выпуск за смену целиком (710 мин = 11ч50м): паллеты + коробки
+function updateShiftOutput(machineId) {
+    const el = document.getElementById(`shiftOutput${machineId}`);
+    if (!el) return;
+
+    const cavitations = parseInt(
+        document.getElementById(`cavitations${machineId}`)?.value,
+    ) || 0;
+    const cycles =
+        parseFloat(document.getElementById(`cycles${machineId}`)?.value) || 0;
+    const piecesPerBox =
+        parseInt(document.getElementById(`piecesPerBox${machineId}`)?.value) || 1;
+    const boxesPerPallet =
+        parseInt(document.getElementById(`boxesPerPallet${machineId}`)?.value) || 1;
+
+    if (cavitations === 0 || cycles === 0) {
+        el.textContent = "--";
+        return;
+    }
+
+    // Вся смена = 710 минут (11ч50м)
+    const SHIFT_MINUTES = 710;
+    const totalPieces = SHIFT_MINUTES * cycles * cavitations;
+    const totalBoxes = Math.floor(totalPieces / piecesPerBox);
+    const fullPallets = Math.floor(totalBoxes / boxesPerPallet);
+    const leftoverBoxes = totalBoxes - fullPallets * boxesPerPallet;
+
+    if (fullPallets > 0) {
+        el.textContent = `${fullPallets}п. ${leftoverBoxes}кор.`;
+    } else if (totalBoxes > 0) {
+        el.textContent = `${totalBoxes}кор.`;
+    } else {
+        el.textContent = `${Math.floor(totalPieces)}шт.`;
+    }
 }
 
 // Производительность в час: кавитации × такты/мин × 60 = шт/час
@@ -297,6 +334,21 @@ function setupProductForms() {
             `.add-downtime-btn[data-machine="${i}"]`,
         );
         if (addBtn) addBtn.addEventListener("click", () => logDowntime(i));
+
+        // Слушатели на поля формы для обновления "За смену" в реальном времени
+        const fields = [
+            `cavitations${i}`,
+            `cycles${i}`,
+            `piecesPerBox${i}`,
+            `boxesPerPallet${i}`,
+        ];
+        fields.forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener("input", () => updateShiftOutput(i));
+                el.addEventListener("change", () => updateShiftOutput(i));
+            }
+        });
     }
 }
 
@@ -497,6 +549,9 @@ async function loadMachineProduct(machineId) {
             product.pieces_per_box;
         document.getElementById(`boxesPerPallet${machineId}`).value =
             product.boxes_per_pallet;
+
+        updateShiftOutput(machineId);
+        updateHourlyRate(machineId);
     } catch (error) {
         console.error("Ошибка загрузки продукта:", error);
     }
@@ -508,6 +563,8 @@ function clearForm(machineId) {
     document.getElementById(`cycles${machineId}`).value = "";
     document.getElementById(`piecesPerBox${machineId}`).value = "1";
     document.getElementById(`boxesPerPallet${machineId}`).value = "1";
+    updateShiftOutput(machineId);
+    updateHourlyRate(machineId);
 }
 
 // Сохранение продукта
@@ -555,6 +612,8 @@ async function saveProduct(machineId) {
             await loadProductCache();
             const action = result.updated ? "обновлены" : "сохранены";
             showNotification(`Данные "${name}" ${action}`, "success");
+            updateShiftOutput(machineId);
+            updateHourlyRate(machineId);
         }
     } catch (error) {
         showNotification("Ошибка сохранения данных", "error");
@@ -598,7 +657,7 @@ function resetCalculator(machineId) {
     document.getElementById(`pieces${machineId}`).textContent = "0";
     const resultsPanel = document.getElementById(`results${machineId}`);
     if (resultsPanel) resultsPanel.style.display = "none";
-    updateHourlyRate(machineId);
+    updateAvailableTime(machineId);
     showNotification("Калькулятор сброшен", "success");
 }
 
