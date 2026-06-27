@@ -733,8 +733,8 @@ async function loadDowntimeLog(machineId) {
 //   вес = ((t×2 + 18)² - 324) × w / 1413
 // ПП (железная шпуля): D_шпули = 16 см
 //   вес = ((t×2 + 16)² - 256) × w / 1413
-// ПЭТ: заводского коэффициента нет
-//   вес = π × ((t + 16)² - 256) × w × 0.00138
+// ПЭТ (шпуля 17 см):
+//   вес = π × ((t + 8.5)² - 72.25) × w × 0.00552
 // t — толщина намотки от края втулки до внешнего края рулона (см)
 
 function getSelectedTapeType() {
@@ -766,12 +766,10 @@ function calculateRollWeight(thicknessCm, widthCm, tapeType = "pp") {
         const netVolumeFactor = outerDiameterSquared - 256; // 256 = 16²
         weightKg = (netVolumeFactor * widthCm) / 1413;
     } else {
-        // ПЭТ: заводского коэффициента нет
-        const outerRadiusCm = thicknessCm + 16;
-        const coreRadiusCm = 16;
+        // ПЭТ (шпуля 17 см):
         weightKg = Math.PI *
-            (outerRadiusCm * outerRadiusCm - coreRadiusCm * coreRadiusCm) *
-            widthCm * 0.00138;
+            (Math.pow(thicknessCm + 8.5, 2) - 72.25) *
+            widthCm * 0.00131;
     }
 
     return parseFloat(weightKg.toFixed(2));
