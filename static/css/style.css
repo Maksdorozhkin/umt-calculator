@@ -1090,3 +1090,163 @@ header {
 .refresh-btn:active {
     transform: scale(0.95);
 }
+
+/* ===== Downtime Header (Click-to-Report Button) ===== */
+.downtime-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--accent);
+    background: var(--accent-light);
+    transition: background 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.downtime-section-header:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.downtime-section-header:active {
+    background: var(--accent-dark);
+    border-color: var(--accent-dark);
+    color: #ffffff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.downtime-section-header .report-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: #ffffff;
+    color: var(--accent);
+    font-size: 0.9rem;
+    transition: background 0.2s, color 0.2s;
+}
+
+.downtime-section-header:hover .report-icon {
+    background: var(--accent);
+    color: #ffffff;
+}
+
+/* ===== Report Tab ===== */
+.report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--border);
+}
+
+.report-header h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.report-summary-badge {
+    background: rgba(230, 57, 70, 0.1);
+    color: var(--danger);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+/* Report Table */
+.report-table-wrapper {
+    overflow-x: auto;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+}
+
+.report-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.report-table thead {
+    background: var(--accent);
+    color: #ffffff;
+}
+
+.report-table th {
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.report-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-primary);
+}
+
+.report-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.report-table tbody tr:hover {
+    background: var(--accent-light);
+}
+
+.report-table .duration-cell {
+    font-weight: 700;
+    color: var(--warning);
+    white-space: nowrap;
+}
+
+.report-table th:nth-child(4) {
+    width: 100%;
+}
+
+.report-table .note-cell {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    max-width: 400px;
+    word-break: break-word;
+}
+
+/* Report empty state */
+.report-empty {
+    text-align: center;
+    padding: 32px 16px;
+    color: var(--text-muted);
+}
+
+.report-empty .empty-icon {
+    font-size: 2rem;
+    margin-bottom: 8px;
+}
+
+/* Report mobile cards */
+@media (max-width: 480px) {
+    .report-table {
+        font-size: 0.8rem;
+    }
+
+    .report-table th,
+    .report-table td {
+        padding: 8px 8px;
+    }
+
+    .report-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+}

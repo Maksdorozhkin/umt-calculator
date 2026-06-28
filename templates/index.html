@@ -239,14 +239,17 @@
 
                         <!-- Downtime Log -->
                         <div class="downtime-section">
-                            <h3>⏱ Лог простоев</h3>
+                            <div class="downtime-section-header" onclick="openReportTab({{ machine.id }})" title="Открыть отчет по простоям">
+                                <span>⏱ Лог простоев</span>
+                                <span class="report-icon">📊</span>
+                            </div>
                             <div class="downtime-form">
                                 <select id="downtimeType{{ machine.id }}">
                                     <option value="roller_7">
-                                        🔄 Замена ролика (7 мин)
+                                        🔄 Ролик (7 мин)
                                     </option>
                                     <option value="roller_15">
-                                        🔄 Замена ролика (15 мин)
+                                        🔄 Ролик (15 мин)
                                     </option>
                                     <option value="custom">
                                         ⚙️ Произвольный
@@ -445,6 +448,36 @@
                             </div>
                             <div class="result-label">Вес рулона (кг)</div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Downtime Report -->
+            <div class="tab-content" id="downtime-report">
+                <div class="report-header">
+                    <h2 id="reportTitle">📊 Отчет по простоям</h2>
+                    <span class="report-summary-badge" id="reportSummaryBadge">Всего: 0 мин</span>
+                </div>
+
+                <!-- Report table -->
+                <div id="reportContent" style="display: none;">
+                    <div class="report-table-wrapper">
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th>Время</th>
+                                    <th>Причина простоя</th>
+                                    <th>Длительность</th>
+                                    <th>Примечание</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reportTableBody">
+                                <!-- Rows injected by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="reportEmpty" class="report-empty" style="display: none;">
+                        <div class="empty-icon">📭</div>\n                        <p>Нет записей о простоях</p>
                     </div>
                 </div>
             </div>

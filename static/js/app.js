@@ -755,8 +755,8 @@ async function loadDowntimeLog(machineId) {
         }
 
         const typeNames = {
-            roller_7: "🔄 Замена ролика (7 мин)",
-            roller_15: "🔄 Замена ролика (15 мин)",
+            roller_7: "🔄 Ролик (7 мин)",
+            roller_15: "🔄 Ролик (15 мин)",
             custom: "⚙️ Произвольный",
         };
 
@@ -1157,3 +1157,99 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 });
+
+// ==================== DOWNTIME REPORT ====================
+
+// Открыть вкладку отчета
+async function openReportTab(machineId) {
+    // Переключить на вкладку отчета
+    const reportTab = document.getElementById("downtime-report");
+
+    // Убрать active со всех вкладок
+    document.querySelectorAll(".tab-btn").forEach((t) =>
+        t.classList.remove("active"),
+    );
+    document.querySelectorAll(".tab-content").forEach((c) =>
+        c.classList.remove("active"),
+    );
+
+    // Активировать вкладку отчета
+    if (reportTab) reportTab.classList.add("active");
+
+    // Загрузить и показать отчет
+    await loadReportData(machineId);
+}
+
+// Загрузить данные отчета
+async function loadReportData(machineId) {
+    const reportTitle = document.getElementById("reportTitle");
+    const reportSummary = document.getElementById("reportSummaryBadge");
+    const reportContent = document.getElementById("reportContent");
+    const reportEmpty = document.getElementById("reportEmpty");
+    const tableBody = document.getElementById("reportTableBody");
+
+    // Показать заголовок с машиной
+    reportTitle.textContent = `📊 Отчет по простоям — М-${machineId}`;
+
+    // Показать контент
+    reportContent.style.display = "block";
+
+    // Загрузить данные
+    try {
+        const response = await fetch(`/api/downtime/machine/${machineId}`);
+        const downtimes = await response.json();
+
+        if (!downtimes || downtimes.length === 0) {
+            tableBody.innerHTML = "";
+            reportEmpty.style.display = "block";
+            reportSummary.textContent = "Всего: 0 мин";
+            return;
+        }
+
+        reportEmpty.style.display = "none";
+
+        // Рассчитать общее время
+        const totalMinutes = downtimes.reduce(
+            (sum, d) => sum + d.duration_minutes,
+            0,
+        );
+        reportSummary.textContent = `Всего: ${totalMinutes} мин`;
+
+        // Сформировать таблицу
+        const typeNames = {
+            roller_7: "🔄 Ролик (7 мин)",
+            roller_15: "🔄 Ролик (15 мин)",
+            custom: "⚙️ Произвольный",
+        };
+
+        tableBody.innerHTML = downtimes
+            .map((d) => {
+                const time = new Date(d.timestamp).toLocaleTimeString(
+                    "ru-RU",
+                    {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                    },
+                );
+                const typeName = typeNames[d.downtime_type] || d.downtime_type;
+                return `
+                    <tr>
+                        <td>${time}</td>
+                        <td>${escapeHtml(typeName)}</td>
+                        <td class="duration-cell">${d.duration_minutes} мин</td>
+                        <td class="note-cell">${escapeHtml(d.note || "")}</td>
+                    </tr>
+                `;
+            })
+            .join("");
+    } catch (error) {
+        console.error("Ошибка загрузки отчета:", error);
+        reportEmpty.style.display = "block";
+        reportEmpty.innerHTML = `
+            <div class="empty-icon">⚠️</div>
+            <p>Ошибка загрузки данных</p>
+        `;
+    }
+}
+
+
