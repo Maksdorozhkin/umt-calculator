@@ -494,6 +494,51 @@ header {
     font-size: 0.85rem;
 }
 
+/* ===== About Page Tables ===== */
+.about-page table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 20px;
+    font-size: 0.85rem;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+.about-page thead {
+    background: var(--accent);
+    color: #ffffff;
+}
+
+.about-page th {
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.about-page td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-primary);
+}
+
+.about-page tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.about-page tbody tr:hover {
+    background: var(--accent-light);
+}
+
+.about-page table th:nth-child(1) {
+    width: 80px;
+}
+
+.about-page table th:nth-child(3) {
+    width: 100px;
+}
+
 .about-page strong {
     color: var(--accent);
 }

@@ -438,7 +438,7 @@ def about():
     readme_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "README.md")
     with open(readme_path, "r", encoding="utf-8") as f:
         md_text = f.read()
-    html_body = markdown.markdown(md_text)
+    html_body = markdown.markdown(md_text, extensions=['tables'])
     return render_template_string(
         """
         <!doctype html>
