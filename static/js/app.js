@@ -755,9 +755,9 @@ async function loadDowntimeLog(machineId) {
         }
 
         const typeNames = {
-            roller_7: "🔄 Ролик (7 мин)",
-            roller_15: "🔄 Ролик (15 мин)",
-            custom: "⚙️ Произвольный",
+            roller_7: "Ролик (7 мин)",
+            roller_15: "Ролик (15 мин)",
+            custom: "Произвольный",
         };
 
         logContainer.innerHTML = downtimes
@@ -1217,9 +1217,9 @@ async function loadReportData(machineId) {
 
         // Сформировать таблицу
         const typeNames = {
-            roller_7: "🔄 Ролик (7 мин)",
-            roller_15: "🔄 Ролик (15 мин)",
-            custom: "⚙️ Произвольный",
+            roller_7: "Ролик (7 мин)",
+            roller_15: "Ролик (15 мин)",
+            custom: "Произвольный",
         };
 
         tableBody.innerHTML = downtimes
@@ -1251,5 +1251,76 @@ async function loadReportData(machineId) {
         `;
     }
 }
+
+// ==================== COPY DOWNTIME REPORT ====================
+
+window.copyDowntimeReport = async function (machineId) {
+    try {
+        const response = await fetch(`/api/downtime/machine/${machineId}`);
+        const downtimes = await response.json();
+
+        if (!downtimes || downtimes.length === 0) {
+            showNotification("Нет записей о простоях для копирования", "info");
+            return;
+        }
+
+        // Формируем текстовый отчёт
+        const now = new Date();
+        const dateStr = now.toLocaleDateString("ru-RU");
+        const typeNames = {
+            roller_7: "Ролик (7 мин)",
+            roller_15: "Ролик (15 мин)",
+            custom: "Произвольный",
+        };
+
+        let lines = [];
+        lines.push(`Отчет по простоям — М-${machineId}`);
+        lines.push(`Дата: ${dateStr}`);
+        lines.push(`Всего записей: ${downtimes.length}`);
+
+        const totalMinutes = downtimes.reduce(
+            (sum, d) => sum + d.duration_minutes,
+            0,
+        );
+        lines.push(`Общий простои: ${totalMinutes} мин`);
+        lines.push("—".repeat(23));
+
+        downtimes.forEach((d) => {
+            const time = new Date(d.timestamp).toLocaleTimeString("ru-RU", {
+                hour: "2-digit",
+                minute: "2-digit",
+            });
+            const typeName = typeNames[d.downtime_type] || d.downtime_type;
+            lines.push(`${time}  ${typeName}`);
+            if (d.note) {
+                lines.push(`   Примечание: ${d.note}`);
+            }
+            lines.push(`   Длительность: ${d.duration_minutes} мин`);
+        });
+
+        const text = lines.join("\n");
+
+        // Копируем в буфер
+        await navigator.clipboard.writeText(text);
+
+        // Визуальный фидбек
+        const btn = document.querySelector(
+            `.btn-copy-downtime[data-machine="${machineId}"]`,
+        );
+        if (btn) {
+            btn.classList.add("copied");
+            btn.textContent = "✅";
+            setTimeout(() => {
+                btn.classList.remove("copied");
+                btn.textContent = "📋 Копировать";
+            }, 1500);
+        }
+
+        showNotification("Лог простоев скопирован", "success");
+    } catch (error) {
+        console.error("Ошибка копирования:", error);
+        showNotification("Ошибка копирования", "error");
+    }
+};
 
 

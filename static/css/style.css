@@ -289,23 +289,23 @@ header {
 /* ===== Buttons ===== */
 .form-actions {
     display: flex;
-    gap: 10px;
-    margin-top: 16px;
+    gap: 8px;
+    margin-top: 10px;
 }
 
 .btn {
     flex: 1;
-    padding: 12px 20px;
+    padding: 8px 14px;
     border: none;
     border-radius: var(--radius-sm);
-    font-size: 0.95rem;
+    font-size: 0.88rem;
     font-weight: 600;
     cursor: pointer;
     transition: all var(--transition);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 4px;
 }
 
 .btn-primary {
@@ -592,9 +592,8 @@ header {
 
 /* ===== Downtime Section ===== */
 .downtime-section {
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px solid var(--border);
+    margin-top: 10px;
+    padding-top: 8px;
 }
 
 .downtime-section h3 {
@@ -1141,47 +1140,65 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    cursor: pointer;
+    gap: 6px;
     user-select: none;
-    padding: 10px 14px;
-    margin-bottom: 12px;
-    border-radius: var(--radius-sm);
-    border: 2px solid var(--accent);
-    background: var(--accent-light);
-    transition: background 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-}
-
-.downtime-section-header:hover {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #ffffff;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-}
-
-.downtime-section-header:active {
-    background: var(--accent-dark);
-    border-color: var(--accent-dark);
-    color: #ffffff;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    padding: 4px 0;
+    font-size: 0.9rem;
 }
 
 .downtime-section-header .report-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
+    gap: 4px;
+    padding: 4px 10px;
     border-radius: 6px;
-    background: #ffffff;
+    background: rgba(0, 0, 0, 0.05);
     color: var(--accent);
-    font-size: 0.9rem;
-    transition: background 0.2s, color 0.2s;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+    user-select: none;
 }
 
-.downtime-section-header:hover .report-icon {
-    background: var(--accent);
-    color: #ffffff;
+.downtime-section-header .report-icon:hover {
+    background: rgba(0, 0, 0, 0.1);
+    border-color: var(--accent);
+}
+
+.btn-copy-downtime {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-primary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.btn-copy-downtime:hover {
+    background: rgba(0, 0, 0, 0.1);
+    border-color: var(--accent);
+}
+
+.btn-copy-downtime.copied {
+    opacity: 1;
+    animation: copyPulse 0.4s ease;
+}
+
+@keyframes copyPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+    100% { transform: scale(1); }
 }
 
 /* ===== Report Tab ===== */

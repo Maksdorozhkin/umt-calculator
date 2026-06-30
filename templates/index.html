@@ -235,24 +235,23 @@
                             </div>
                         </div>
 
-                        <hr class="section-divider" />
-
                         <!-- Downtime Log -->
                         <div class="downtime-section">
-                            <div class="downtime-section-header" onclick="openReportTab({{ machine.id }})" title="Открыть отчет по простоям">
+                            <div class="downtime-section-header">
                                 <span>⏱ Лог простоев</span>
-                                <span class="report-icon">📊</span>
+                                <span class="report-icon" onclick="openReportTab({{ machine.id }})" title="Открыть отчет по простоям">📊 Отчет</span>
+                                <button class="btn-copy-downtime" data-machine="{{ machine.id }}" title="Копировать лог простоев" onclick="copyDowntimeReport({{ machine.id }})">📋 Копировать</button>
                             </div>
                             <div class="downtime-form">
                                 <select id="downtimeType{{ machine.id }}">
                                     <option value="roller_7">
-                                        🔄 Ролик (7 мин)
+                                        Ролик (7 мин)
                                     </option>
                                     <option value="roller_15">
-                                        🔄 Ролик (15 мин)
+                                        Ролик (15 мин)
                                     </option>
                                     <option value="custom">
-                                        ⚙️ Произвольный
+                                        Произвольный
                                     </option>
                                 </select>
                                 <input
