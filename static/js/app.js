@@ -2,6 +2,115 @@
 let currentMachine = 1;
 let productCache = [];
 
+// ==================== OFFLINE QUEUE (PWA) ====================
+const OFFLINE_QUEUE_KEY = 'umt_offline_queue';
+
+/**
+ * customFetch — wrapper around fetch().
+ *  - GET  → обычный fetch (SW сделает network-first с кэшем).
+ *  - POST/DELETE → при офлайн-ошибке:
+ *      1. Ставит запрос в localStorage-очередь (FIFO)
+ *      2. Возвращает { success:true, offline:true }
+ *  - При появлении сети — автоматически проигрывает очередь (FIFO),
+ *    а также проверяет очередь каждые 30 секунд.
+ */
+async function customFetch(url, options = {}) {
+    const method = options.method || 'GET';
+    const isWrite = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
+
+    try {
+        const response = await fetch(url, options);
+        // Если ответ OK — при WRITE-запросе удаляем дубликаты из очереди
+        if (isWrite && response.ok) {
+            await replayOfflineQueue();
+        }
+        return response;
+    } catch (err) {
+        if (!isWrite) throw err; // GET — пробрасываем ошибку (SW справится)
+
+        // Офлайн при POST/DELETE — сохраняем в очередь
+        const entry = {
+            url,
+            method: method,
+            body: options.body ? JSON.parse(options.body) : undefined,
+            headers: options.headers || { 'Content-Type': 'application/json' },
+            timestamp: Date.now(),
+        };
+        const queue = getOfflineQueue();
+        queue.push(entry);
+        localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
+
+        // Запускаем периодическую попытку синхронизации
+        ensureSyncTimer();
+
+        // Возвращаем «успех офлайн» чтобы UI не ломался
+        console.warn('[offline] queued request:', url, entry);
+        return new Response(JSON.stringify({ success: true, offline: true }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+        });
+    }
+}
+
+function getOfflineQueue() {
+    try {
+        return JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY)) || [];
+    } catch { return []; }
+}
+
+/** Проиграть очередь FIFO — при успехе удаляем, при ошибке оставляем */
+async function replayOfflineQueue() {
+    const queue = getOfflineQueue();
+    if (queue.length === 0) return;
+
+    for (const entry of queue) {
+        try {
+            await fetch(entry.url, {
+                method: entry.method,
+                headers: entry.headers,
+                body: entry.body ? JSON.stringify(entry.body) : undefined,
+            });
+            // Успех — удаляем
+            const idx = queue.indexOf(entry);
+            if (idx > -1) queue.splice(idx, 1);
+        } catch {
+            // Ошибка — оставляем в очереди для следующей попытки
+            break;
+        }
+    }
+    localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
+}
+
+let _syncTimer = null;
+function ensureSyncTimer() {
+    if (_syncTimer) return;
+    _syncTimer = setInterval(async () => {
+        if (navigator.onLine) {
+            await replayOfflineQueue();
+            if (getOfflineQueue().length === 0) {
+                clearInterval(_syncTimer);
+                _syncTimer = null;
+            }
+        }
+    }, 30000); // каждые 30 секунд
+}
+
+// При восстановлении сети — мгновенная попытка синхронизации
+window.addEventListener('online', () => {
+    console.log('[offline] back online, syncing...');
+    replayOfflineQueue();
+    ensureSyncTimer();
+});
+
+// Service Worker → message: sync queue
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', event => {
+        if (event.data && event.data.type === 'SYNC_OFFLINE_QUEUE') {
+            replayOfflineQueue();
+        }
+    });
+}
+
 // ==================== INIT ====================
 document.addEventListener("DOMContentLoaded", function () {
     loadProductCache().then(() => {
@@ -219,7 +328,7 @@ function setupTabs() {
 // загрузка кэша продуктов
 async function loadProductCache() {
     try {
-        const response = await fetch("/api/products");
+        const response = await customFetch("/api/products");
         productCache = await response.json();
     } catch (error) {
         console.error("Ошибка загрузки кэша продуктов:", error);
@@ -459,7 +568,7 @@ function setupReferencePanel() {
             };
 
             try {
-                const response = await fetch("/api/products", {
+                const response = await customFetch("/api/products", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(productData),
@@ -532,7 +641,7 @@ async function loadInitialData() {
 
 async function loadMachineProduct(machineId) {
     try {
-        const response = await fetch(`/api/machine/${machineId}/product`);
+        const response = await customFetch(`/api/machine/${machineId}/product`);
         const product = await response.json();
 
         if (product.error) {
@@ -595,7 +704,7 @@ async function saveProduct(machineId) {
     };
 
     try {
-        const response = await fetch("/api/products", {
+        const response = await customFetch("/api/products", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(productData),
@@ -603,7 +712,7 @@ async function saveProduct(machineId) {
 
         const result = await response.json();
         if (result.success) {
-            await fetch(`/api/machine/${machineId}/product`, {
+            await customFetch(`/api/machine/${machineId}/product`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ product_id: result.id }),
@@ -622,7 +731,7 @@ async function saveProduct(machineId) {
 
 async function calculateProduction(machineId) {
     try {
-        const response = await fetch(`/api/calculate/${machineId}`);
+        const response = await customFetch(`/api/calculate/${machineId}`);
         const result = await response.json();
 
         if (result.error) {
@@ -716,7 +825,7 @@ async function logDowntime(machineId) {
     const note = document.getElementById(`downtimeNote${machineId}`).value;
 
     try {
-        const response = await fetch("/api/downtime", {
+        const response = await customFetch("/api/downtime", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -741,7 +850,7 @@ async function logDowntime(machineId) {
 
 async function loadDowntimeLog(machineId) {
     try {
-        const response = await fetch(`/api/downtime/machine/${machineId}`);
+        const response = await customFetch(`/api/downtime/machine/${machineId}`);
         const downtimes = await response.json();
 
         const logContainer = document.getElementById(`downtimeLog${machineId}`);
@@ -904,7 +1013,7 @@ async function calculateTape() {
             payload.tape_available = tapeAvailable;
         }
 
-        const response = await fetch("/api/tape-calculation", {
+        const response = await customFetch("/api/tape-calculation", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
@@ -977,7 +1086,7 @@ window.deleteDowntime = async function (machineId, downtimeId) {
     if (!confirm("Удалить эту запись о простое?")) return;
 
     try {
-        const response = await fetch(`/api/downtime/${downtimeId}`, {
+        const response = await customFetch(`/api/downtime/${downtimeId}`, {
             method: "DELETE",
         });
         const result = await response.json();
@@ -996,7 +1105,7 @@ window.deleteProductFromRef = async function (productId) {
     if (!confirm("Удалить этот продукт из справочника?")) return;
 
     try {
-        const response = await fetch(`/api/products/${productId}`, {
+        const response = await customFetch(`/api/products/${productId}`, {
             method: "DELETE",
         });
         const result = await response.json();
@@ -1019,7 +1128,7 @@ window.resetDatabase = async function () {
         return;
 
     try {
-        const response = await fetch("/api/reset-database", { method: "POST" });
+        const response = await customFetch("/api/reset-database", { method: "POST" });
         const result = await response.json();
 
         if (result.success) {
@@ -1196,7 +1305,7 @@ async function loadReportData(machineId) {
 
     // Загрузить данные
     try {
-        const response = await fetch(`/api/downtime/machine/${machineId}`);
+        const response = await customFetch(`/api/downtime/machine/${machineId}`);
         const downtimes = await response.json();
 
         if (!downtimes || downtimes.length === 0) {
@@ -1256,7 +1365,7 @@ async function loadReportData(machineId) {
 
 window.copyDowntimeReport = async function (machineId) {
     try {
-        const response = await fetch(`/api/downtime/machine/${machineId}`);
+        const response = await customFetch(`/api/downtime/machine/${machineId}`);
         const downtimes = await response.json();
 
         if (!downtimes || downtimes.length === 0) {

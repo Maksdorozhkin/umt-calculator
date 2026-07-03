@@ -8,6 +8,24 @@
             rel="stylesheet"
             href="{{ url_for('static', filename='css/style.css') }}"
         />
+        <!-- PWA manifest + iOS -->
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/static/icons/icon-192x192.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="UMT" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="theme-color" content="#1a73e8" />
+        <!-- Service Worker registration -->
+        <script>
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('/sw.js')
+                        .then(reg => console.log('[SW] registered', reg.scope))
+                        .catch(err => console.error('[SW] registration failed', err));
+                });
+            }
+        </script>
     </head>
     <body
         data-theme="{% if shift_type == 'day' %}light{% else %}dark{% endif %}"

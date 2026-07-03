@@ -4,7 +4,7 @@ import os
 import sqlite3
 from datetime import datetime, timedelta
 
-from flask import Flask, jsonify, render_template, render_template_string, request
+from flask import Flask, jsonify, render_template, render_template_string, request, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
@@ -118,6 +118,21 @@ def calculate_production(product, machine_id):
     )
 
     return full_pallets, remaining_boxes, math.floor(total_pieces)
+
+
+# PWA routes — Service Worker и Manifest
+
+
+@app.route("/sw.js")
+def service_worker():
+    """Serve the PWA Service Worker with correct MIME type"""
+    return send_from_directory(app.static_folder, 'sw.js', mimetype='application/javascript')
+
+
+@app.route("/manifest.json")
+def manifest():
+    """Serve the PWA manifest"""
+    return send_from_directory(app.static_folder, 'manifest.json', mimetype='application/manifest+json')
 
 
 # Маршруты
