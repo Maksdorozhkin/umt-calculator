@@ -36,7 +36,7 @@ def generate_pwa_icons(output_dir="static"):
             text_w, text_h = draw.textsize(text, font=font)
             
         text_x = (size - text_w) // 2
-        text_y = (size - text_h) // 2 - int(size * 0.05)
+        text_y = (size - text_h) // 2 - int(size * 0.5)
         
         # Рисуем текст
         draw.text((text_x, text_y), text, fill=text_color, font=font)
