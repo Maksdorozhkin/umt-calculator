@@ -634,10 +634,11 @@
                     <div class="form-group">
                         <label for="remainingItems">Осталось выполнить</label>
                         <input
-                            type="number"
-                            inputmode="decimal"
+                            type="text"
+                            inputmode="text"
+                            pattern="[0-9.,-]*"
                             id="remainingItems"
-                            placeholder="-100 = осталось, +2 = сверх заказа"
+                            placeholder="Водим '-1000' как в ERP"
                         />
                     </div>
 
