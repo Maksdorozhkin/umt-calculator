@@ -4,7 +4,14 @@ import os
 import sqlite3
 from datetime import datetime, timedelta
 
-from flask import Flask, jsonify, render_template, render_template_string, request, send_from_directory
+from flask import (
+    Flask,
+    jsonify,
+    render_template,
+    render_template_string,
+    request,
+    send_from_directory,
+)
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
@@ -126,13 +133,17 @@ def calculate_production(product, machine_id):
 @app.route("/sw.js")
 def service_worker():
     """Serve the PWA Service Worker with correct MIME type"""
-    return send_from_directory(app.static_folder, 'sw.js', mimetype='application/javascript')
+    return send_from_directory(
+        app.static_folder, "sw.js", mimetype="application/javascript"
+    )
 
 
 @app.route("/manifest.json")
 def manifest():
     """Serve the PWA manifest"""
-    return send_from_directory(app.static_folder, 'manifest.json', mimetype='application/manifest+json')
+    return send_from_directory(
+        app.static_folder, "manifest.json", mimetype="application/manifest+json"
+    )
 
 
 # Маршруты
@@ -453,7 +464,7 @@ def about():
     readme_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "README.md")
     with open(readme_path, "r", encoding="utf-8") as f:
         md_text = f.read()
-    html_body = markdown.markdown(md_text, extensions=['tables'])
+    html_body = markdown.markdown(md_text, extensions=["tables"])
     return render_template_string(
         """
         <!doctype html>
