@@ -93,14 +93,11 @@
                         <!-- Product Search -->
                         <div class="autocomplete-wrapper">
                             <div class="form-group">
-                                <label for="productName{{ machine.id }}"
-                                    >Наименование продукции</label
-                                >
                                 <input
                                     type="text"
                                     id="productName{{ machine.id }}"
                                     class="product-search"
-                                    placeholder="Начните вводить название..."
+                                    placeholder="Наименование продукции"
                                     autocomplete="off"
                                     data-machine="{{ machine.id }}"
                                 />
@@ -118,53 +115,45 @@
                         >
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="cavitations{{ machine.id }}"
-                                        >Кавитации</label
-                                    >
                                     <input
                                         type="number"
                                         id="cavitations{{ machine.id }}"
                                         min="1"
                                         value="1"
                                         required
+                                        placeholder="Кавитации"
                                     />
                                 </div>
                                 <div class="form-group">
-                                    <label for="cycles{{ machine.id }}"
-                                        >Тактов / мин</label
-                                    >
                                     <input
                                         type="number"
                                         id="cycles{{ machine.id }}"
                                         step="0.1"
                                         min="0.1"
                                         required
+                                        placeholder="Тактов / мин"
                                     />
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="piecesPerBox{{ machine.id }}"
-                                        >Штук в коробке</label
-                                    >
                                     <input
                                         type="number"
                                         id="piecesPerBox{{ machine.id }}"
                                         min="1"
                                         value="1"
                                         required
+                                        placeholder="Штук в коробке"
                                     />
                                 </div>
                                 <div class="form-group">
-                                    <label for="boxesPerPallet{{ machine.id }}"
-                                        >Коробок на паллете</label
-                                    >
                                     <input
                                         type="number"
                                         id="boxesPerPallet{{ machine.id }}"
                                         min="1"
                                         value="1"
                                         required
+                                        placeholder="Коробок на паллете"
                                     />
                                 </div>
                             </div>
@@ -535,53 +524,45 @@
                                 </div>
                                 <div class="form-row">
                                     <div class="form-group">
-                                        <label for="newCavitations"
-                                            >Кавитации</label
-                                        >
                                         <input
                                             type="number"
                                             id="newCavitations"
                                             min="1"
                                             value="1"
                                             required
+                                            placeholder="Кавитации"
                                         />
                                     </div>
                                     <div class="form-group">
-                                        <label for="newCycles"
-                                            >Тактов / мин</label
-                                        >
                                         <input
                                             type="number"
                                             id="newCycles"
                                             step="0.1"
                                             min="0.1"
                                             required
+                                            placeholder="Тактов / мин"
                                         />
                                     </div>
                                 </div>
                                 <div class="form-row">
                                     <div class="form-group">
-                                        <label for="newPiecesPerBox"
-                                            >Штук в коробке</label
-                                        >
                                         <input
                                             type="number"
                                             id="newPiecesPerBox"
                                             min="1"
                                             value="1"
                                             required
+                                            placeholder="Штук в коробке"
                                         />
                                     </div>
                                     <div class="form-group">
-                                        <label for="newBoxesPerPallet"
-                                            >Коробок на паллете</label
-                                        >
                                         <input
                                             type="number"
                                             id="newBoxesPerPallet"
                                             min="1"
                                             value="1"
                                             required
+                                            placeholder="Коробок на паллете"
                                         />
                                     </div>
                                 </div>
