@@ -16,7 +16,7 @@
         <meta name="apple-mobile-web-app-title" content="UMT" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="theme-color" content="#1a73e8" />
-        <!-- Service Worker registration -->
+        <!-- Регистрация сервис воркера -->
         <script>
             if ('serviceWorker' in navigator) {
                 window.addEventListener('load', () => {
@@ -72,7 +72,7 @@
         </header>
 
         <main>
-            <!-- Machine Calculator Panels -->
+            <!-- Панели калькуляторов машин -->
             {% for machine in machines %}
             <div
                 class="tab-content {% if loop.first %}active{% endif %}"
@@ -86,7 +86,7 @@
                         >
                     </div>
                     <div class="machine-body">
-                        <!-- Product Search -->
+                        <!-- Автокомплит -->
                         <div class="autocomplete-wrapper">
                             <div class="form-group">
                                 <input
@@ -203,7 +203,7 @@
                             </div>
                         </form>
 
-                        <!-- Results -->
+                        <!-- Результаты расчетов -->
                         <div
                             class="results-panel"
                             id="results{{ machine.id }}"
@@ -238,7 +238,7 @@
                             </div>
                         </div>
 
-                        <!-- Downtime Log -->
+                        <!-- Лог простоев -->
                         <div class="downtime-section">
                             <div class="downtime-section-header">
                                 <span>⏱ Лог простоев</span>
@@ -287,7 +287,7 @@
             </div>
             {% endfor %}
 
-            <!-- Tape Calculator -->
+            <!-- Калькулятор ленты -->
             <div class="tab-content" id="tape">
                 <div class="tape-calculator">
                     <h2>📏 Калькулятор ленты</h2>
@@ -416,7 +416,8 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- Общий блок отхода -->
+                        <!-- Общий блок отхода  -->
+						<!-- TODO: Нужно протестировать как вообще работает этот расчет если не работает то поправить или удалить-->
                         <div
                             class="result-card"
                             id="droblenkaCard"
@@ -444,7 +445,7 @@
                 </div>
             </div>
 
-            <!-- Downtime Report -->
+            <!-- Отчет по простоям -->
             <div class="tab-content" id="downtime-report">
                 <div class="report-header">
                     <h2 id="reportTitle">📊 Отчет по простоям</h2>
@@ -493,7 +494,7 @@
                         + Добавить продукт
                     </button>
 
-                    <!-- Add Product Modal -->
+                    <!-- Добавить продукт (модальное окно) -->
                     <div
                         class="modal-overlay"
                         id="addProductModal"
@@ -584,7 +585,7 @@
             </div>
         </main>
 
-        <!-- Items Calculator -->
+        <!-- Калькулятор изделий -->
         <div class="tab-content" id="items-calc">
             <div class="tape-calculator">
                 <h2>🧮 Калькулятор изделий</h2>
@@ -606,7 +607,7 @@
                         />
                     </div>
 
-                    <!-- Упаковка (опционально) -->
+                    <!-- Коробки поллеты (если надо) -->
                     <div class="form-row">
                         <div class="form-group">
                             <input
@@ -628,7 +629,7 @@
                         </div>
                     </div>
 
-                    <!-- Results -->
+                    <!-- Расчеты -->
                     <div class="items-calc-results">
                         <div class="items-calc-row">
                             <span class="items-calc-label">5% от заказа</span>

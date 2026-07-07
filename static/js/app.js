@@ -1,8 +1,8 @@
-// ===== UMT Production Calculator =====
+// UMT Калькулятор формовки
 let currentMachine = 1;
 let productCache = [];
 
-// ==================== OFFLINE QUEUE (PWA) ====================
+//  (PWA) Реализация работы как приложения
 const OFFLINE_QUEUE_KEY = "umt_offline_queue";
 
 /**
@@ -113,7 +113,7 @@ if ("serviceWorker" in navigator) {
   });
 }
 
-// ==================== INIT ====================
+//  INIT
 document.addEventListener("DOMContentLoaded", function () {
   loadProductCache().then(() => {
     setupTabs();
@@ -161,11 +161,11 @@ function updateShiftDisplay() {
     label.textContent = "Ночная смена";
   }
 
-  // Calculate remaining time
+  // Расчет времени
   const remaining = getRemainingMinutes();
   time.textContent = `До конца: ${formatTimeShort(remaining)}`;
 
-  // Update available time for current machine
+  // Обновление оставшегося времени для текущей машины
   updateAvailableTime(currentMachine);
 }
 
@@ -340,7 +340,7 @@ async function loadProductCache() {
   }
 }
 
-// AUTOCOMPLETE
+// Автокомплит, экономит время
 function setupAutocomplete() {
   for (let i = 1; i <= 7; i++) {
     const input = document.getElementById(`productName${i}`);
@@ -918,7 +918,8 @@ function calculateRollWeight(thicknessCm, widthCm, tapeType = "pp") {
     const netVolumeFactor = outerDiameterSquared - 256; // 256 = 16²
     weightKg = (netVolumeFactor * widthCm) / 1413;
   } else {
-    // ПЭТ (шпуля 17 см):
+    // ПЭТ (шпуля 17 см)
+    // HACK: нужно протестировать расчеты, Максим Б. сказал что плотность ПЭТ лучше считать по 0,00140
     weightKg =
       Math.PI * (Math.pow(thicknessCm + 8.5, 2) - 72.25) * widthCm * 0.00131;
   }
@@ -1259,21 +1260,29 @@ document.addEventListener("DOMContentLoaded", () => {
   let refreshing = false;
   const THRESHOLD = 100;
 
-  document.addEventListener("touchstart", (e) => {
-    if (window.scrollY > 0 || refreshing) return;
-    startY = e.touches[0].clientY;
-    pulling = true;
-  }, { passive: true });
+  document.addEventListener(
+    "touchstart",
+    (e) => {
+      if (window.scrollY > 0 || refreshing) return;
+      startY = e.touches[0].clientY;
+      pulling = true;
+    },
+    { passive: true },
+  );
 
-  document.addEventListener("touchmove", (e) => {
-    if (!pulling || window.scrollY > 0 || refreshing) return;
-    const dy = e.touches[0].clientY - startY;
-    if (dy > 20) {
-      ptrOverlay.classList.add("active");
-      ptrOverlay.style.height = Math.min(dy, 80) + "px";
-      if (pullHint) pullHint.classList.add("hidden");
-    }
-  }, { passive: true });
+  document.addEventListener(
+    "touchmove",
+    (e) => {
+      if (!pulling || window.scrollY > 0 || refreshing) return;
+      const dy = e.touches[0].clientY - startY;
+      if (dy > 20) {
+        ptrOverlay.classList.add("active");
+        ptrOverlay.style.height = Math.min(dy, 80) + "px";
+        if (pullHint) pullHint.classList.add("hidden");
+      }
+    },
+    { passive: true },
+  );
 
   document.addEventListener("touchend", () => {
     if (!pulling || refreshing) return;
