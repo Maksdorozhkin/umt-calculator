@@ -1248,14 +1248,48 @@ function setupItemsCalculator() {
   }
 }
 
-// Кнопка обновления
+// Pull-to-Refresh
 document.addEventListener("DOMContentLoaded", () => {
-  const refreshBtn = document.getElementById("refreshButton");
-  if (refreshBtn) {
-    refreshBtn.addEventListener("click", () => {
+  const ptrOverlay = document.getElementById("ptrOverlay");
+  const pullHint = document.getElementById("pullHint");
+  if (!ptrOverlay) return;
+
+  let startY = 0;
+  let pulling = false;
+  let refreshing = false;
+  const THRESHOLD = 100;
+
+  document.addEventListener("touchstart", (e) => {
+    if (window.scrollY > 0 || refreshing) return;
+    startY = e.touches[0].clientY;
+    pulling = true;
+  }, { passive: true });
+
+  document.addEventListener("touchmove", (e) => {
+    if (!pulling || window.scrollY > 0 || refreshing) return;
+    const dy = e.touches[0].clientY - startY;
+    if (dy > 20) {
+      ptrOverlay.classList.add("active");
+      ptrOverlay.style.height = Math.min(dy, 80) + "px";
+      if (pullHint) pullHint.classList.add("hidden");
+    }
+  }, { passive: true });
+
+  document.addEventListener("touchend", () => {
+    if (!pulling || refreshing) return;
+    pulling = false;
+    const currentHeight = parseInt(ptrOverlay.style.height) || 0;
+    if (currentHeight >= THRESHOLD) {
+      refreshing = true;
+      ptrOverlay.classList.add("active");
+      ptrOverlay.style.height = "48px";
       window.location.reload();
-    });
-  }
+    } else {
+      ptrOverlay.classList.remove("active");
+      ptrOverlay.style.height = "0";
+      if (pullHint) pullHint.classList.remove("hidden");
+    }
+  });
 });
 
 // ==================== DOWNTIME REPORT ====================

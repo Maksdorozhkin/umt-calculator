@@ -30,6 +30,10 @@
     <body
         data-theme="{% if shift_type == 'day' %}light{% else %}dark{% endif %}"
     >
+        <div class="ptr-overlay" id="ptrOverlay">
+            <div class="ptr-spinner"></div>
+            <span>Обновление…</span>
+        </div>
         <header>
             <div class="header-top">
                 <h1>🏭 UMT Формовка </h1>
@@ -44,15 +48,7 @@
                     >
                     <span class="shift-time" id="shiftTime"></span>
                 </div>
-                <!--Кнопка обновления-->
-                <button
-                    class="refresh-btn"
-                    id="refreshButton"
-                    type="button"
-                    title="Обновить страницу"
-                >
-                    🔄
-                </button>
+                <div class="pull-hint" id="pullHint">Потяните ↓ для обновления</div>
             </div>
             <button class="tab-btn" data-tab="items-calc">
                 🧮 Калькулятор Изделий
