@@ -1154,16 +1154,25 @@ function setupItemsCalculator() {
 
   function updateItemsCalc() {
     const totalOrder = parseFloat(totalOrderInput.value) || 0;
-    const remaining = parseFloat(remainingInput.value) || 0;
+    const remainingRaw = remainingInput.value.trim();
     const itemsPerBox = parseInt(itemsPerBoxInput.value) || 0;
     const boxesPerPallet = parseInt(boxesPerPalletInput.value) || 0;
+
+    // Если поле «осталось» пустое — считаем от всего заказа
+    const remainingIsEmpty = remainingRaw === "";
+    const remaining = parseFloat(remainingRaw) || 0;
 
     const fivePercent = Math.round(totalOrder * 0.05);
 
     let baseRemaining, remainingPlusFive, remainingMinusFive;
 
-    if (remaining < 0) {
-      // Осталось доделать |remaining| штук
+    if (remainingIsEmpty) {
+      // Не ввели «осталось» — считаем от всего заказа
+      baseRemaining = totalOrder;
+      remainingPlusFive = totalOrder + fivePercent;
+      remainingMinusFive = Math.max(0, totalOrder - fivePercent);
+    } else if (remaining < 0) {
+      // Осталось доделать |remaining| штук (например -1000)
       baseRemaining = Math.abs(remaining);
       remainingPlusFive = baseRemaining + fivePercent;
       remainingMinusFive = Math.max(0, baseRemaining - fivePercent);
