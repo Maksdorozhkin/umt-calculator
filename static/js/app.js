@@ -502,6 +502,14 @@ function setupTapeForm() {
       document.getElementById("rollWeightValue").textContent = "0";
     }, 10);
   });
+
+  // Автоформатирование поля «Требуемое количество изделий»
+  const requiredPiecesInput = document.getElementById("requiredPieces");
+  if (requiredPiecesInput) {
+    requiredPiecesInput.addEventListener("input", () => {
+      formatInputValue(requiredPiecesInput);
+    });
+  }
 }
 
 // Окно добавления продукта
@@ -933,9 +941,7 @@ async function calculateTape() {
   const wastePercent = parseFloat(
     document.getElementById("wastePercent").value,
   );
-  const requiredPieces = parseInt(
-    document.getElementById("requiredPieces").value,
-  );
+  const requiredPieces = parseInt(stripSpaces(document.getElementById("requiredPieces").value));
   const tapeAvailable = parseFloat(
     document.getElementById("tapeAvailable").value,
   );
@@ -1132,6 +1138,39 @@ window.resetDatabase = async function () {
     showNotification("Ошибка подключения к серверу", "error");
   }
 };
+
+// Убрать пробелы из строки перед парсингом числа
+function stripSpaces(str) {
+  return str.replace(/\s/g, "");
+}
+
+// Форматировать число в поле ввода с сохранением позиции курсора
+function formatInputValue(input) {
+  const cursorPos = input.selectionStart;
+  const raw = stripSpaces(input.value);
+  if (!raw || raw === "-") return;
+
+  const num = parseFloat(raw);
+  if (isNaN(num)) return;
+
+  const isNegative = raw.startsWith("-");
+  const formatted = Math.abs(num).toLocaleString("ru-RU").replace(/\s/g, " ");
+  input.value = isNegative ? "-" + formatted : formatted;
+
+  // Восстановить позицию курсора (с учётом добавленных пробелов)
+  const digitsBefore = raw.substring(0, cursorPos).replace(/[^0-9]/g, "").length;
+  let newPos = 0;
+  let digitCount = 0;
+  for (let i = 0; i < input.value.length; i++) {
+    if (input.value[i] >= "0" && input.value[i] <= "9") {
+      digitCount++;
+    }
+    newPos = i + 1;
+    if (digitCount === digitsBefore) break;
+  }
+  input.setSelectionRange(newPos, newPos);
+}
+
 // Калькулятор изделий
 function setupItemsCalculator() {
   const totalOrderInput = document.getElementById("totalOrder");
@@ -1142,38 +1181,6 @@ function setupItemsCalculator() {
   // Форматирование числа с пробелами-разделителями: 1000000 -> 1 000 000
   function formatNumber(num) {
     return num.toLocaleString("ru-RU").replace(/\s/g, " ");
-  }
-
-  // Убрать пробелы из строки перед парсингом числа
-  function stripSpaces(str) {
-    return str.replace(/\s/g, "");
-  }
-
-  // Форматировать число в поле ввода с сохранением позиции курсора
-  function formatInputValue(input) {
-    const cursorPos = input.selectionStart;
-    const raw = stripSpaces(input.value);
-    if (!raw || raw === "-") return;
-
-    const num = parseFloat(raw);
-    if (isNaN(num)) return;
-
-    const isNegative = raw.startsWith("-");
-    const formatted = formatNumber(Math.abs(num));
-    input.value = isNegative ? "-" + formatted : formatted;
-
-    // Восстановить позицию курсора (с учётом добавленных пробелов)
-    const digitsBefore = raw.substring(0, cursorPos).replace(/[^0-9]/g, "").length;
-    let newPos = 0;
-    let digitCount = 0;
-    for (let i = 0; i < input.value.length; i++) {
-      if (input.value[i] >= "0" && input.value[i] <= "9") {
-        digitCount++;
-      }
-      newPos = i + 1;
-      if (digitCount === digitsBefore) break;
-    }
-    input.setSelectionRange(newPos, newPos);
   }
 
   // Конвертировать штуки в паллеты + коробки
