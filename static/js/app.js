@@ -1144,6 +1144,38 @@ function setupItemsCalculator() {
     return num.toLocaleString("ru-RU").replace(/\s/g, " ");
   }
 
+  // Убрать пробелы из строки перед парсингом числа
+  function stripSpaces(str) {
+    return str.replace(/\s/g, "");
+  }
+
+  // Форматировать число в поле ввода с сохранением позиции курсора
+  function formatInputValue(input) {
+    const cursorPos = input.selectionStart;
+    const raw = stripSpaces(input.value);
+    if (!raw || raw === "-") return;
+
+    const num = parseFloat(raw);
+    if (isNaN(num)) return;
+
+    const isNegative = raw.startsWith("-");
+    const formatted = formatNumber(Math.abs(num));
+    input.value = isNegative ? "-" + formatted : formatted;
+
+    // Восстановить позицию курсора (с учётом добавленных пробелов)
+    const digitsBefore = raw.substring(0, cursorPos).replace(/[^0-9]/g, "").length;
+    let newPos = 0;
+    let digitCount = 0;
+    for (let i = 0; i < input.value.length; i++) {
+      if (input.value[i] >= "0" && input.value[i] <= "9") {
+        digitCount++;
+      }
+      newPos = i + 1;
+      if (digitCount === digitsBefore) break;
+    }
+    input.setSelectionRange(newPos, newPos);
+  }
+
   // Конвертировать штуки в паллеты + коробки
   function toPalletsBoxes(totalPieces, itemsPerBox, boxesPerPallet) {
     const totalBoxes = Math.floor(totalPieces / itemsPerBox);
@@ -1153,8 +1185,8 @@ function setupItemsCalculator() {
   }
 
   function updateItemsCalc() {
-    const totalOrder = parseFloat(totalOrderInput.value) || 0;
-    const remainingRaw = remainingInput.value.trim();
+    const totalOrder = parseFloat(stripSpaces(totalOrderInput.value)) || 0;
+    const remainingRaw = stripSpaces(remainingInput.value.trim());
     const itemsPerBox = parseInt(itemsPerBoxInput.value) || 0;
     const boxesPerPallet = parseInt(boxesPerPalletInput.value) || 0;
 
@@ -1245,10 +1277,16 @@ function setupItemsCalculator() {
   }
 
   if (totalOrderInput) {
-    totalOrderInput.addEventListener("input", updateItemsCalc);
+    totalOrderInput.addEventListener("input", () => {
+      formatInputValue(totalOrderInput);
+      updateItemsCalc();
+    });
   }
   if (remainingInput) {
-    remainingInput.addEventListener("input", updateItemsCalc);
+    remainingInput.addEventListener("input", () => {
+      formatInputValue(remainingInput);
+      updateItemsCalc();
+    });
   }
   if (itemsPerBoxInput) {
     itemsPerBoxInput.addEventListener("input", updateItemsCalc);
