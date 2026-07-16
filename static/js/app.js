@@ -5,6 +5,11 @@ let productCache = [];
 //  (PWA) Реализация работы как приложения
 const OFFLINE_QUEUE_KEY = "umt_offline_queue";
 
+// === localStorage кэш для офлайн-работы ===
+const CACHE_PRODUCTS_KEY = "umt_products_cache";
+const CACHE_MACHINE_PRODUCT_KEY = "umt_machine_product_cache";
+const CACHE_DOWNTIME_KEY = "umt_downtime_cache";
+
 /**
  * customFetch — wrapper around fetch().
  *  - GET  → обычный fetch (SW сделает network-first с кэшем).
@@ -65,6 +70,7 @@ async function replayOfflineQueue() {
   const queue = getOfflineQueue();
   if (queue.length === 0) return;
 
+  let anySuccess = false;
   for (const entry of queue) {
     try {
       await fetch(entry.url, {
@@ -75,12 +81,34 @@ async function replayOfflineQueue() {
       // Успех — удаляем
       const idx = queue.indexOf(entry);
       if (idx > -1) queue.splice(idx, 1);
+      anySuccess = true;
     } catch {
       // Ошибка — оставляем в очереди для следующей попытки
       break;
     }
   }
   localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
+
+  // После успешной синхронизации обновляем кэши с сервера
+  if (anySuccess) {
+    await reloadCachesAfterSync();
+  }
+}
+
+/** Перезагрузка всех кэшей с сервера после синхронизации */
+async function reloadCachesAfterSync() {
+  try {
+    await loadProductCache();
+  } catch {
+    // products не критичны
+  }
+  for (let i = 1; i <= 7; i++) {
+    try {
+      await loadDowntimeLog(i);
+    } catch {
+      // downtime не критичен
+    }
+  }
 }
 
 let _syncTimer = null;
@@ -111,6 +139,50 @@ if ("serviceWorker" in navigator) {
       replayOfflineQueue();
     }
   });
+}
+
+// ==================== LOCALSTORAGE CACHE HELPERS ====================
+
+/** Загрузить справочник из localStorage или вернуть [] */
+function getCachedProducts() {
+  try {
+    return JSON.parse(localStorage.getItem(CACHE_PRODUCTS_KEY)) || [];
+  } catch {
+    return [];
+  }
+}
+
+/** Сохранить справочник в localStorage */
+function setCachedProducts(products) {
+  localStorage.setItem(CACHE_PRODUCTS_KEY, JSON.stringify(products));
+}
+
+/** Получить кэш machine→product (объект { "1": {...}, "2": {...} }) */
+function getCachedMachineProducts() {
+  try {
+    return JSON.parse(localStorage.getItem(CACHE_MACHINE_PRODUCT_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+
+/** Сохранить mapping machine→product в localStorage */
+function setCachedMachineProducts(cache) {
+  localStorage.setItem(CACHE_MACHINE_PRODUCT_KEY, JSON.stringify(cache));
+}
+
+/** Получить кэш логов простоев для машины (объект { "1": [...], "2": [...] }) */
+function getCachedDowntimes() {
+  try {
+    return JSON.parse(localStorage.getItem(CACHE_DOWNTIME_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+
+/** Сохранить логи простоев в localStorage */
+function setCachedDowntimes(cache) {
+  localStorage.setItem(CACHE_DOWNTIME_KEY, JSON.stringify(cache));
 }
 
 //  INIT
@@ -329,14 +401,25 @@ function setupTabs() {
   });
 }
 
-// загрузка кэша продуктов
+// загрузка кэша продуктов (localStorage → сервер)
 async function loadProductCache() {
+  // Сначала загружаем из localStorage (мгновенно, работает офлайн)
+  const cached = getCachedProducts();
+  if (cached.length > 0) {
+    productCache = cached;
+  }
+
+  // Затем пытаемся обновить с сервера
   try {
     const response = await customFetch("/api/products");
-    productCache = await response.json();
+    const fresh = await response.json();
+    if (fresh.length > 0) {
+      productCache = fresh;
+      setCachedProducts(fresh);
+    }
   } catch (error) {
-    console.error("Ошибка загрузки кэша продуктов:", error);
-    productCache = [];
+    console.warn("[offline] Справочник не обновлён, используется кэш:", error.message);
+    // productCache уже заполнен из localStorage
   }
 }
 
@@ -636,30 +719,45 @@ async function loadInitialData() {
 }
 
 async function loadMachineProduct(machineId) {
+  let product = null;
+
+  // Пытаемся загрузить с сервера
   try {
     const response = await customFetch(`/api/machine/${machineId}/product`);
-    const product = await response.json();
+    product = await response.json();
+  } catch (error) {
+    console.warn(`[offline] Не удалось загрузить продукт для М-${machineId}, использую кэш`);
+  }
 
-    if (product.error) {
+  // Если сервер недоступен или ошибка — берём из localStorage
+  if (!product || product.error) {
+    const cachedMap = getCachedMachineProducts();
+    product = cachedMap[String(machineId)] || null;
+    if (!product) {
       clearForm(machineId);
       return;
     }
-
-    document.getElementById(`productName${machineId}`).value = product.name;
-    document.getElementById(`cavitations${machineId}`).value =
-      product.cavitations;
-    document.getElementById(`cycles${machineId}`).value =
-      product.cycles_per_minute;
-    document.getElementById(`piecesPerBox${machineId}`).value =
-      product.pieces_per_box;
-    document.getElementById(`boxesPerPallet${machineId}`).value =
-      product.boxes_per_pallet;
-
-    updateShiftOutput(machineId);
-    updateHourlyRate(machineId);
-  } catch (error) {
-    console.error("Ошибка загрузки продукта:", error);
   }
+
+  // Сохраняем в кэш (при успехе с сервера обновляем)
+  if (!product.error) {
+    const cachedMap = getCachedMachineProducts();
+    cachedMap[String(machineId)] = product;
+    setCachedMachineProducts(cachedMap);
+  }
+
+  document.getElementById(`productName${machineId}`).value = product.name;
+  document.getElementById(`cavitations${machineId}`).value =
+    product.cavitations;
+  document.getElementById(`cycles${machineId}`).value =
+    product.cycles_per_minute;
+  document.getElementById(`piecesPerBox${machineId}`).value =
+    product.pieces_per_box;
+  document.getElementById(`boxesPerPallet${machineId}`).value =
+    product.boxes_per_pallet;
+
+  updateShiftOutput(machineId);
+  updateHourlyRate(machineId);
 }
 
 function clearForm(machineId) {
@@ -706,11 +804,20 @@ async function saveProduct(machineId) {
 
     const result = await response.json();
     if (result.success) {
-      await customFetch(`/api/machine/${machineId}/product`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ product_id: result.id }),
-      });
+      // Обновляем кэш machine→product
+      const cachedMap = getCachedMachineProducts();
+      cachedMap[String(machineId)] = productData;
+      setCachedMachineProducts(cachedMap);
+
+      try {
+        await customFetch(`/api/machine/${machineId}/product`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ product_id: result.id }),
+        });
+      } catch {
+        // Офлайн — mapping обновится при синхронизации
+      }
 
       await loadProductCache();
       const action = result.updated ? "обновлены" : "сохранены";
@@ -719,36 +826,95 @@ async function saveProduct(machineId) {
       updateHourlyRate(machineId);
     }
   } catch (error) {
-    showNotification("Ошибка сохранения данных", "error");
+    // Офлайн-режим: сохраняем в кэш и показываем предупреждение
+    console.warn("[offline] Сохранение в очередь, сервер недоступен");
+    const cachedMap = getCachedMachineProducts();
+    cachedMap[String(machineId)] = productData;
+    setCachedMachineProducts(cachedMap);
+    showNotification(`"${name}" сохранён офлайн`, "info");
+    updateShiftOutput(machineId);
+    updateHourlyRate(machineId);
   }
 }
 
-async function calculateProduction(machineId) {
-  try {
-    const response = await customFetch(`/api/calculate/${machineId}`);
-    const result = await response.json();
+/**
+ * Клиентский расчёт выпуска до конца смены.
+ * Дублирует логику серверного calculate_production() из app.py.
+ * Работает полностью офлайн.
+ */
+function calculateProduction(machineId) {
+  const cavitations = parseInt(document.getElementById(`cavitations${machineId}`).value) || 0;
+  const cyclesPerMin = parseFloat(document.getElementById(`cycles${machineId}`).value) || 0;
+  const piecesPerBox = parseInt(document.getElementById(`piecesPerBox${machineId}`).value) || 1;
+  const boxesPerPallet = parseInt(document.getElementById(`boxesPerPallet${machineId}`).value) || 1;
 
-    if (result.error) {
-      document.getElementById(`pallets${machineId}`).textContent = "0";
-      document.getElementById(`boxes${machineId}`).textContent = "0";
-      document.getElementById(`pieces${machineId}`).textContent = "0";
-      showNotification(result.error, "error");
-      return;
-    }
-
-    document.getElementById(`pallets${machineId}`).textContent = result.pallets;
-    document.getElementById(`boxes${machineId}`).textContent = result.boxes;
-    document.getElementById(`pieces${machineId}`).textContent = result.pieces;
-
-    // Показать результаты
-    const resultsPanel = document.getElementById(`results${machineId}`);
-    if (resultsPanel) resultsPanel.style.display = "grid";
-
-    updateAvailableTime(machineId);
-  } catch (error) {
-    console.error("Ошибка расчета:", error);
-    showNotification("Ошибка расчета", "error");
+  if (cavitations <= 0 || cyclesPerMin <= 0) {
+    document.getElementById(`pallets${machineId}`).textContent = "0";
+    document.getElementById(`boxes${machineId}`).textContent = "0";
+    document.getElementById(`pieces${machineId}`).textContent = "0";
+    return;
   }
+
+  // Определяем оставшееся время до конца смены (дублирует get_current_shift из app.py)
+  const remainingMinutes = getRemainingShiftMinutes();
+  if (remainingMinutes <= 0) {
+    document.getElementById(`pallets${machineId}`).textContent = "0";
+    document.getElementById(`boxes${machineId}`).textContent = "0";
+    document.getElementById(`pieces${machineId}`).textContent = "0";
+    return;
+  }
+
+  // Вычитаем все простои за смену (и прошедшие, и будущие)
+  const totalDowntime = getTotalDowntimeAllForMachine(machineId);
+  const effectiveTime = Math.max(0, remainingMinutes - totalDowntime);
+
+  // Формула: pieces = time * cycles_per_min * cavitations
+  const totalPieces = effectiveTime * cyclesPerMin * cavitations;
+  const totalBoxes = totalPieces / piecesPerBox;
+  const totalPallets = totalBoxes / boxesPerPallet;
+
+  const fullPallets = Math.floor(totalPallets);
+  const remainingBoxes = Math.floor(totalBoxes) - (fullPallets * boxesPerPallet);
+
+  document.getElementById(`pallets${machineId}`).textContent = fullPallets;
+  document.getElementById(`boxes${machineId}`).textContent = Math.max(0, remainingBoxes);
+  document.getElementById(`pieces${machineId}`).textContent = Math.floor(totalPieces);
+
+  // Показать результаты
+  const resultsPanel = document.getElementById(`results${machineId}`);
+  if (resultsPanel) resultsPanel.style.display = "grid";
+
+  updateAvailableTime(machineId);
+}
+
+/**
+ * Оставшиеся минуты до конца смены (с учётом -10 мин смещения).
+ * Дублирует get_current_shift() из app.py.
+ * День: 8:00–20:00, Ночь: 20:00–8:00
+ */
+function getRemainingShiftMinutes() {
+  const now = new Date();
+  const hour = now.getHours();
+  let targetEnd;
+
+  if (hour >= 8 && hour < 20) {
+    // Дневная смена → конец сегодня в 20:00
+    targetEnd = new Date(now);
+    targetEnd.setHours(20, 0, 0, 0);
+  } else if (hour >= 20) {
+    // Ночная смена (вечер) → конец завтра в 8:00
+    targetEnd = new Date(now);
+    targetEnd.setDate(targetEnd.getDate() + 1);
+    targetEnd.setHours(8, 0, 0, 0);
+  } else {
+    // Ночная смена (утро) → конец сегодня в 8:00
+    targetEnd = new Date(now);
+    targetEnd.setHours(8, 0, 0, 0);
+  }
+
+  const diffMs = targetEnd.getTime() - now.getTime();
+  // -10 минут как в серверном коде
+  return Math.max(0, Math.floor(diffMs / 60000) - 10);
 }
 
 function resetCalculator(machineId) {
@@ -816,16 +982,18 @@ async function logDowntime(machineId) {
 
   const note = document.getElementById(`downtimeNote${machineId}`).value;
 
+  const downtimeData = {
+    machine_id: machineId,
+    downtime_type: downtimeType,
+    duration_minutes: duration,
+    note: note,
+  };
+
   try {
     const response = await customFetch("/api/downtime", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        machine_id: machineId,
-        downtime_type: downtimeType,
-        duration_minutes: duration,
-        note: note,
-      }),
+      body: JSON.stringify(downtimeData),
     });
 
     const result = await response.json();
@@ -836,55 +1004,95 @@ async function logDowntime(machineId) {
       updateAvailableTime(machineId);
     }
   } catch (error) {
-    showNotification("Ошибка добавления простоя", "error");
+    // Офлайн-режим: добавляем в локальный кэш
+    console.warn("[offline] Простой сохранён офлайн");
+    const offlineEntry = {
+      id: Date.now(),
+      downtime_type: downtimeType,
+      duration_minutes: duration,
+      note: note,
+      timestamp: new Date().toISOString(),
+      is_future: true,
+    };
+    const cachedAll = getCachedDowntimes();
+    if (!cachedAll[String(machineId)]) {
+      cachedAll[String(machineId)] = [];
+    }
+    cachedAll[String(machineId)].push(offlineEntry);
+    setCachedDowntimes(cachedAll);
+
+    document.getElementById(`downtimeNote${machineId}`).value = "";
+    renderDowntimeLog(machineId, cachedAll[String(machineId)]);
+    updateAvailableTime(machineId);
+    showNotification("Простой добавлен офлайн", "info");
   }
 }
 
+/** Рендер списка простоев в DOM */
+function renderDowntimeLog(machineId, downtimes) {
+  const logContainer = document.getElementById(`downtimeLog${machineId}`);
+  if (!logContainer) return;
+
+  if (downtimes.length === 0) {
+    logContainer.innerHTML =
+      '<div class="empty-state" style="padding: 20px;"><p style="font-size: 0.85rem; color: var(--text-muted);">Нет записей о простоях</p></div>';
+    updateAvailableTime(machineId);
+    return;
+  }
+
+  const typeNames = {
+    roller_7: "Ролик (7 мин)",
+    roller_15: "Ролик (15 мин)",
+    custom: "Произвольный",
+  };
+
+  logContainer.innerHTML = downtimes
+    .map((d) => {
+      const time = new Date(d.timestamp).toLocaleTimeString("ru-RU", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      const isFuture = d.is_future === true;
+      return `
+              <div class="downtime-entry" data-future="${isFuture}">
+                  <div class="downtime-info">
+                      <span class="downtime-type">${typeNames[d.downtime_type] || d.downtime_type}</span>
+                      <span class="downtime-detail">${time}${d.note ? " · " + escapeHtml(d.note) : ""}${!isFuture ? " <em class='past-badge'>(прошедший)</em>" : ""}</span>
+                  </div>
+                  <span class="downtime-duration">${d.duration_minutes} мин</span>
+                  <button class="btn btn-danger" onclick="deleteDowntime(${machineId}, ${d.id})" title="Удалить">✕</button>
+              </div>
+          `;
+    })
+    .join("");
+
+  updateAvailableTime(machineId);
+}
+
 async function loadDowntimeLog(machineId) {
+  let downtimes = null;
+
+  // Сначала загружаем из localStorage (мгновенно, работает офлайн)
+  const cachedAll = getCachedDowntimes();
+  const cached = cachedAll[String(machineId)] || [];
+  if (cached.length > 0) {
+    renderDowntimeLog(machineId, cached);
+  }
+
+  // Затем пытаемся обновить с сервера
   try {
     const response = await customFetch(`/api/downtime/machine/${machineId}`);
-    const downtimes = await response.json();
-
-    const logContainer = document.getElementById(`downtimeLog${machineId}`);
-    if (!logContainer) return;
-
-    if (downtimes.length === 0) {
-      logContainer.innerHTML =
-        '<div class="empty-state" style="padding: 20px;"><p style="font-size: 0.85rem; color: var(--text-muted);">Нет записей о простоях</p></div>';
-      updateAvailableTime(machineId);
-      return;
+    downtimes = await response.json();
+    if (downtimes.length > 0) {
+      // Сохраняем в кэш
+      const cachedAll = getCachedDowntimes();
+      cachedAll[String(machineId)] = downtimes;
+      setCachedDowntimes(cachedAll);
+      renderDowntimeLog(machineId, downtimes);
     }
-
-    const typeNames = {
-      roller_7: "Ролик (7 мин)",
-      roller_15: "Ролик (15 мин)",
-      custom: "Произвольный",
-    };
-
-    logContainer.innerHTML = downtimes
-      .map((d) => {
-        const time = new Date(d.timestamp).toLocaleTimeString("ru-RU", {
-          hour: "2-digit",
-          minute: "2-digit",
-        });
-        // is_future приходит с сервера — он сравнивает на одном часе
-        const isFuture = d.is_future === true;
-        return `
-                <div class="downtime-entry" data-future="${isFuture}">
-                    <div class="downtime-info">
-                        <span class="downtime-type">${typeNames[d.downtime_type] || d.downtime_type}</span>
-                        <span class="downtime-detail">${time}${d.note ? " · " + escapeHtml(d.note) : ""}${!isFuture ? " <em class='past-badge'>(прошедший)</em>" : ""}</span>
-                    </div>
-                    <span class="downtime-duration">${d.duration_minutes} мин</span>
-                    <button class="btn btn-danger" onclick="deleteDowntime(${machineId}, ${d.id})" title="Удалить">✕</button>
-                </div>
-            `;
-      })
-      .join("");
-
-    updateAvailableTime(machineId);
   } catch (error) {
-    console.error("Ошибка загрузки лога:", error);
+    console.warn(`[offline] Лог простоев М-${machineId} не обновлён, использую кэш`);
+    // Уже отрендерен из localStorage выше
   }
 }
 
@@ -1089,7 +1297,18 @@ window.deleteDowntime = async function (machineId, downtimeId) {
       updateAvailableTime(machineId);
     }
   } catch (error) {
-    showNotification("Ошибка удаления", "error");
+    // Офлайн: удаляем из локального кэша
+    console.warn("[offline] Удаление простоя офлайн");
+    const cachedAll = getCachedDowntimes();
+    if (cachedAll[String(machineId)]) {
+      cachedAll[String(machineId)] = cachedAll[String(machineId)].filter(
+        (d) => d.id !== downtimeId,
+      );
+      setCachedDowntimes(cachedAll);
+      renderDowntimeLog(machineId, cachedAll[String(machineId)]);
+      updateAvailableTime(machineId);
+    }
+    showNotification("Запись удалена офлайн", "info");
   }
 };
 
@@ -1110,7 +1329,13 @@ window.deleteProductFromRef = async function (productId) {
       showNotification(result.error || "Ошибка удаления", "error");
     }
   } catch (error) {
-    showNotification("Ошибка подключения", "error");
+    // Офлайн: удаляем из локального кэша
+    console.warn("[offline] Удаление продукта офлайн");
+    const cached = getCachedProducts();
+    productCache = cached.filter((p) => p.id !== productId);
+    setCachedProducts(productCache);
+    loadProductList();
+    showNotification("Продукт удалён офлайн", "info");
   }
 };
 

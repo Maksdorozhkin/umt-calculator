@@ -987,6 +987,10 @@ header {
     border-left-color: var(--danger);
 }
 
+.notification.info {
+    border-left-color: var(--primary);
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 480px) {
     .header-top h1 {
