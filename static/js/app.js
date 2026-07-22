@@ -1083,13 +1083,11 @@ async function loadDowntimeLog(machineId) {
   try {
     const response = await customFetch(`/api/downtime/machine/${machineId}`);
     downtimes = await response.json();
-    if (downtimes.length > 0) {
-      // Сохраняем в кэш
-      const cachedAll = getCachedDowntimes();
-      cachedAll[String(machineId)] = downtimes;
-      setCachedDowntimes(cachedAll);
-      renderDowntimeLog(machineId, downtimes);
-    }
+    // Всегда обновляем кэш и рендер — даже при пустом ответе (сброс после смены)
+    const cachedAll = getCachedDowntimes();
+    cachedAll[String(machineId)] = downtimes;
+    setCachedDowntimes(cachedAll);
+    renderDowntimeLog(machineId, downtimes);
   } catch (error) {
     console.warn(`[offline] Отчет простоев М-${machineId} не обновлён, использую кэш`)
     // Уже отрендерен из localStorage выше
