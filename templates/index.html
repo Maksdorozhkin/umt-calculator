@@ -228,12 +228,12 @@
                             </div>
                         </div>
 
-                        <!-- Лог простоев -->
+                        <!-- Отчет простоев -->
                         <div class="downtime-section">
                             <div class="downtime-section-header">
-                                <span>⏱ Лог простоев</span>
-                                <span class="report-icon" onclick="openReportTab({{ machine.id }})" title="Открыть отчет по простоям">📊 Отчет</span>
-                                <button class="btn-copy-downtime" data-machine="{{ machine.id }}" title="Копировать лог простоев" onclick="copyDowntimeReport({{ machine.id }})">📋 Копировать</button>
+                                <span>⏱ Отчет простоев</span>
+                                <span class="report-icon" onclick="openReportTab({{ machine.id }})" title="Открыть отчет по простоям">⏱ Простои</span>
+                                <button class="btn-copy-downtime" data-machine="{{ machine.id }}" title="Копировать отчет простоев" onclick="copyDowntimeReport({{ machine.id }})">📋 Копировать простои</button>
                             </div>
                             <div class="downtime-form">
                                 <select id="downtimeType{{ machine.id }}">
@@ -437,7 +437,7 @@
             <!-- Отчет по простоям -->
             <div class="tab-content" id="downtime-report">
                 <div class="report-header">
-                    <h2 id="reportTitle">📊 Отчет по простоям</h2>
+                    <h2 id="reportTitle">📊 Отчет простоев</h2>
                     <span class="report-summary-badge" id="reportSummaryBadge">Всего: 0 мин</span>
                 </div>
 
@@ -459,7 +459,7 @@
                         </table>
                     </div>
                     <div id="reportEmpty" class="report-empty" style="display: none;">
-                        <div class="empty-icon">📭</div>\n                        <p>Нет записей о простоях</p>
+                        <div class="empty-icon">📭</div>\n                        <p>Нет записей</p>
                     </div>
                 </div>
             </div>

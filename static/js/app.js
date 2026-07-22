@@ -171,7 +171,7 @@ function setCachedMachineProducts(cache) {
   localStorage.setItem(CACHE_MACHINE_PRODUCT_KEY, JSON.stringify(cache));
 }
 
-/** Получить кэш логов простоев для машины (объект { "1": [...], "2": [...] }) */
+/** Получить кэш отчетов простоев для машины (объект { "1": [...], "2": [...] }) */
 function getCachedDowntimes() {
   try {
     return JSON.parse(localStorage.getItem(CACHE_DOWNTIME_KEY)) || {};
@@ -180,7 +180,7 @@ function getCachedDowntimes() {
   }
 }
 
-/** Сохранить логи простоев в localStorage */
+/** Сохранить отчеты простоев в localStorage */
 function setCachedDowntimes(cache) {
   localStorage.setItem(CACHE_DOWNTIME_KEY, JSON.stringify(cache));
 }
@@ -1035,7 +1035,7 @@ function renderDowntimeLog(machineId, downtimes) {
 
   if (downtimes.length === 0) {
     logContainer.innerHTML =
-      '<div class="empty-state" style="padding: 20px;"><p style="font-size: 0.85rem; color: var(--text-muted);">Нет записей о простоях</p></div>';
+      '<div class="empty-state" style="padding: 20px;"><p style="font-size: 0.85rem; color: var(--text-muted);">Нет записей</p></div>';
     updateAvailableTime(machineId);
     return;
   }
@@ -1091,7 +1091,7 @@ async function loadDowntimeLog(machineId) {
       renderDowntimeLog(machineId, downtimes);
     }
   } catch (error) {
-    console.warn(`[offline] Лог простоев М-${machineId} не обновлён, использую кэш`);
+    console.warn(`[offline] Отчет простоев М-${machineId} не обновлён, использую кэш`)
     // Уже отрендерен из localStorage выше
   }
 }
@@ -1611,7 +1611,7 @@ async function loadReportData(machineId) {
   const tableBody = document.getElementById("reportTableBody");
 
   // Показать заголовок с машиной
-  reportTitle.textContent = `📊 Отчет по простоям — М-${machineId}`;
+  reportTitle.textContent = `📊 Отчет простоев — М-${machineId}`;
 
   // Показать контент
   reportContent.style.display = "block";
@@ -1679,7 +1679,7 @@ window.copyDowntimeReport = async function (machineId) {
     const downtimes = await response.json();
 
     if (!downtimes || downtimes.length === 0) {
-      showNotification("Нет записей о простоях для копирования", "info");
+      showNotification("Нет записей для копирования", "info");
       return;
     }
 
@@ -1693,7 +1693,7 @@ window.copyDowntimeReport = async function (machineId) {
     };
 
     let lines = [];
-    lines.push(`Отчет по простоям — М-${machineId}`);
+    lines.push(`Отчет простоев — М-${machineId}`);
     lines.push(`Дата: ${dateStr}`);
     lines.push(`Всего записей: ${downtimes.length}`);
 
@@ -1746,7 +1746,7 @@ window.copyDowntimeReport = async function (machineId) {
       }, 1500);
     }
 
-    showNotification("Лог простоев скопирован", "success");
+    showNotification("Отчет простоев скопирован", "success");
   } catch (error) {
     console.error("Ошибка копирования:", error);
     showNotification("Ошибка копирования", "error");
