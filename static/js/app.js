@@ -1702,7 +1702,7 @@ window.copyDowntimeReport = async function (machineId) {
       0,
     );
     lines.push(`Общий простои: ${totalMinutes} мин`);
-    lines.push("—".repeat(23));
+    lines.push("");
 
     downtimes.forEach((d) => {
       const time = new Date(d.timestamp).toLocaleTimeString("ru-RU", {
@@ -1714,13 +1714,24 @@ window.copyDowntimeReport = async function (machineId) {
       if (d.note) {
         lines.push(`   Примечание: ${d.note}`);
       }
-      lines.push(`   Длительность: ${d.duration_minutes} мин`);
     });
 
     const text = lines.join("\n");
 
-    // Копируем в буфер
-    await navigator.clipboard.writeText(text);
+    // Копируем в буфер (с fallback для старых браузеров)
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // Fallback: временный textarea
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    }
 
     // Визуальный фидбек
     const btn = document.querySelector(

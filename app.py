@@ -317,6 +317,16 @@ def get_machine_downtime(machine_id):
         # Буфер 10 сек: простои добавленные прямо сейчас считаются "будущими"
         cutoff = now - timedelta(seconds=10)
 
+        # Очистка старых записей (старше текущей смены) — разовая при каждом запросе
+        old_records = DowntimeLog.query.filter(
+            DowntimeLog.machine_id == machine_id,
+            DowntimeLog.timestamp < shift_start,
+        ).all()
+        for r in old_records:
+            db.session.delete(r)
+        if old_records:
+            db.session.commit()
+
         downtimes = (
             DowntimeLog.query.filter(
                 DowntimeLog.machine_id == machine_id,
