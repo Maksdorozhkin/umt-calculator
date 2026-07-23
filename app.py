@@ -104,8 +104,9 @@ def calculate_production(product, machine_id):
 
     shift_start = shift_end - timedelta(hours=11, minutes=50)
     now = datetime.now()
-    # Буфер 10 сек: простои добавленные прямо сейчас учитываются
-    cutoff = now - timedelta(seconds=10)
+    # Фиксированные простои (roller_7, roller_15) имеют timestamp = now - duration,
+    # поэтому cutoff должен учитывать максимальную длительность простоя.
+    cutoff = now - timedelta(minutes=15)
     downtimes = DowntimeLog.query.filter(
         DowntimeLog.machine_id == machine_id,
         DowntimeLog.timestamp >= cutoff,
@@ -294,11 +295,20 @@ def get_machine_product(machine_id):
 def log_downtime():
     try:
         data = request.json
+        now = datetime.now()
+        # Для фиксированных простоев timestamp = now - duration,
+        # чтобы они сразу считались «прошедшими» (как будто только что закончились).
+        # Произвольный простой остаётся с текущим timestamp.
+        if data["downtime_type"] in ("roller_7", "roller_15"):
+            ts = now - timedelta(minutes=data["duration_minutes"])
+        else:
+            ts = now
         downtime = DowntimeLog(
             machine_id=data["machine_id"],
             downtime_type=data["downtime_type"],
             duration_minutes=data["duration_minutes"],
             note=data.get("note", ""),
+            timestamp=ts,
         )
         db.session.add(downtime)
         db.session.commit()
@@ -317,10 +327,13 @@ def get_machine_downtime(machine_id):
         # Буфер 10 сек: простои добавленные прямо сейчас считаются "будущими"
         cutoff = now - timedelta(seconds=10)
 
-        # Очистка старых записей (старше текущей смены) — разовая при каждом запросе
+        # Очистка старых записей: всё что не попадает в текущую смену
+        # Это включает записи старше shift_start И записи из «мёртвой зоны»
+        # между предыдущей и текущей сменой (10-минутный буфер конца смены)
+        previous_shift_end = shift_start - timedelta(minutes=10)
         old_records = DowntimeLog.query.filter(
             DowntimeLog.machine_id == machine_id,
-            DowntimeLog.timestamp < shift_start,
+            DowntimeLog.timestamp < previous_shift_end,
         ).all()
         for r in old_records:
             db.session.delete(r)
