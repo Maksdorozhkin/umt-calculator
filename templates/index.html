@@ -235,42 +235,89 @@
                                 <span class="report-icon" onclick="openReportTab({{ machine.id }})" title="Открыть отчет по простоям">⏱ Простои</span>
                                 <button class="btn-copy-downtime" data-machine="{{ machine.id }}" title="Копировать отчет простоев" onclick="copyDowntimeReport({{ machine.id }})">📋 Копировать простои</button>
                             </div>
-                            <div class="downtime-form">
-                                <select id="downtimeType{{ machine.id }}">
-                                    <option value="roller_7">
-                                        Ролик (7 мин)
-                                    </option>
-                                    <option value="roller_15">
-                                        Ролик (15 мин)
-                                    </option>
-                                    <option value="custom">
-                                        Произвольный
-                                    </option>
-                                </select>
-                                <input
-                                    type="number"
-                                    id="downtimeDuration{{ machine.id }}"
-                                    min="1"
-                                    max="480"
-                                    placeholder="Мин"
-                                    style="display: none"
-                                />
-                                <input
-                                    type="text"
-                                    id="downtimeNote{{ machine.id }}"
-                                    placeholder="Примечание"
-                                />
-                                <button
-                                    class="btn btn-warning add-downtime-btn"
-                                    data-machine="{{ machine.id }}"
-                                >
-                                    + Добавить
-                                </button>
+                            <!-- Таймлайн смены -->
+                            <div class="timeline-container" id="timelineContainer{{ machine.id }}">
+                                <div class="timeline-bar" id="timelineBar{{ machine.id }}"></div>
+                                <div class="timeline-labels" id="timelineLabels{{ machine.id }}"></div>
                             </div>
-                            <div
-                                class="downtime-log"
-                                id="downtimeLog{{ machine.id }}"
-                            ></div>
+
+                            <!-- Баланс смены -->
+                            <div class="shift-balance" id="shiftBalance{{ machine.id }}">
+                                <div class="balance-header">⚖️ Баланс смены</div>
+                                <div class="balance-row">
+                                    <span class="balance-label">✅ Факт выпуска:</span>
+                                    <input
+                                        type="text"
+                                        inputmode="numeric"
+                                        id="factOutput{{ machine.id }}"
+                                        placeholder="0"
+                                        data-machine="{{ machine.id }}"
+                                    />
+                                    <span class="balance-unit">шт</span>
+                                </div>
+                                <div class="balance-row">
+                                    <span class="balance-label">⏱ Прошло времени:</span>
+                                    <span class="balance-value" id="elapsedTime{{ machine.id }}">0ч 0мин</span>
+                                </div>
+                                <div class="balance-row">
+                                    <span class="balance-label">📊 Должно быть:</span>
+                                    <span class="balance-value" id="expectedOutput{{ machine.id }}">0 шт</span>
+                                </div>
+                                <div class="balance-row">
+                                    <span class="balance-label">🔍 Разница:</span>
+                                    <span class="balance-value" id="outputDiff{{ machine.id }}">0 шт</span>
+                                </div>
+                                <div class="balance-row warning-row" id="unaccountedRow{{ machine.id }}">
+                                    <span class="balance-label">⚠️ ≈ Неучтённый простой:</span>
+                                    <span class="balance-value" id="unaccountedDowntime{{ machine.id }}">0 мин</span>
+                                </div>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar" id="progressBar{{ machine.id }}"></div>
+                                    <span class="progress-text" id="progressText{{ machine.id }}">0%</span>
+                                </div>
+                            </div>
+
+                            <!-- Отчет простоев (аккордеон) -->
+                            <div class="downtime-section">
+                                <div class="downtime-section-header">
+                                    <span class="downtime-accordion-btn" data-machine="{{ machine.id }}">⏱ Простои ▾</span>
+                                    <button class="btn-copy-downtime" data-machine="{{ machine.id }}" title="Копировать отчет простыев" onclick="copyDowntimeReport({{ machine.id }})">📋 Копировать простои</button>
+                                </div>
+                                <div class="downtime-accordion-content collapsed" id="downtimeAccordion{{ machine.id }}">
+                                    <div class="downtime-form">
+                                        <select id="downtimeType{{ machine.id }}">
+                                            <option value="roller_7">Замена ролика (7 мин)</option>
+                                            <option value="roller_15">Замена ролика (15 мин)</option>
+                                            <option value="scrap_tape">Брак ленты / дробилка</option>
+                                            <option value="breakdown">Поломка</option>
+                                            <option value="setup">Настройка / дробилка</option>
+                                        </select>
+                                        <input
+                                            type="number"
+                                            id="downtimeDuration{{ machine.id }}"
+                                            min="1"
+                                            max="480"
+                                            placeholder="Мин"
+                                            style="display: none"
+                                        />
+                                        <input
+                                            type="text"
+                                            id="downtimeNote{{ machine.id }}"
+                                            placeholder="Примечание"
+                                        />
+                                        <button
+                                            class="btn btn-warning add-downtime-btn"
+                                            data-machine="{{ machine.id }}"
+                                        >
+                                            + Добавить
+                                        </button>
+                                    </div>
+                                    <div
+                                        class="downtime-log"
+                                        id="downtimeLog{{ machine.id }}"
+                                    ></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

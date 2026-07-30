@@ -590,7 +590,167 @@ header {
     letter-spacing: 0.5px;
 }
 
-/* ===== Downtime Section ===== */
+/* ===== Таймлайн смены ===== */
+.timeline-container {
+    margin: 12px 0;
+    padding: 0 4px;
+}
+
+.timeline-bar {
+    display: flex;
+    height: 28px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+}
+
+.timeline-segment {
+    transition: opacity 0.2s;
+    min-width: 2px;
+}
+
+.timeline-segment:hover {
+    opacity: 0.8;
+}
+
+.timeline-work {
+    background: var(--success);
+}
+
+.timeline-downtime {
+    /* цвет задаётся через color-* классы */
+}
+
+.color-roller { background: #f4a261; }
+.color-scrap { background: #e76f51; }
+.color-breakdown { background: #e63946; }
+.color-setup { background: #457b9d; }
+.color-default { background: #8b8da3; }
+
+.timeline-labels {
+    display: flex;
+    margin-top: 2px;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    gap: 1px;
+}
+
+.timeline-label {
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ===== Баланс смены ===== */
+.shift-balance {
+    margin: 12px 0;
+    padding: 14px;
+    background: var(--bg-primary);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    font-size: 0.85rem;
+}
+
+.balance-header {
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+.balance-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0;
+}
+
+.balance-label {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    min-width: 130px;
+}
+
+.balance-value {
+    font-weight: 700;
+    color: var(--text-primary);
+    flex: 1;
+    text-align: right;
+}
+
+.balance-unit {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+#factOutput {
+    width: 90px !important;
+    padding: 4px 8px !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 6px !important;
+    background: var(--bg-input) !important;
+    color: var(--text-primary) !important;
+    font-size: 0.9rem !important;
+    text-align: right !important;
+    flex: 1 !important;
+}
+
+.warning-row {
+    display: none;
+    color: var(--danger);
+}
+
+/* Цветовые состояния баланса */
+.shift-balance.status-ok {
+    border-color: var(--success);
+    background: rgba(42, 157, 143, 0.08);
+}
+
+.shift-balance.status-warning {
+    border-color: #f4a261;
+    background: rgba(244, 162, 97, 0.08);
+}
+
+.shift-balance.status-danger {
+    border-color: var(--danger);
+    background: rgba(230, 57, 70, 0.08);
+}
+
+/* Прогресс-бар */
+.progress-bar-container {
+    position: relative;
+    margin-top: 10px;
+    height: 14px;
+    background: var(--bg-secondary);
+    border-radius: 7px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+.progress-bar {
+    height: 100%;
+    background: var(--success);
+    transition: width 0.4s ease, background 0.3s;
+    border-radius: 7px;
+}
+
+.status-warning .progress-bar { background: #f4a261; }
+.status-danger .progress-bar { background: var(--danger); }
+
+.progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-shadow: 0 0 3px var(--bg-secondary);
+}
+
+/* ===== Downtime Section (Аккордеон) ===== */
 .downtime-section {
     margin-top: 10px;
     padding-top: 8px;
@@ -1061,6 +1221,20 @@ header {
         font-size: 0.78rem;
         padding: 5px 10px;
     }
+
+    /* Баланс на мобильных */
+    .balance-label {
+        min-width: 100px;
+        font-size: 0.75rem;
+    }
+
+    .shift-balance {
+        padding: 10px;
+    }
+
+    #factOutput {
+        width: 70px !important;
+    }
 }
 /* ===== Items Calculator Results ===== */
 .items-calc-results {
@@ -1177,7 +1351,7 @@ header {
     font-size: 0.9rem;
 }
 
-.downtime-section-header .report-icon {
+.downtime-accordion-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1194,9 +1368,22 @@ header {
     user-select: none;
 }
 
-.downtime-section-header .report-icon:hover {
+.downtime-accordion-btn:hover {
     background: rgba(0, 0, 0, 0.1);
     border-color: var(--accent);
+}
+
+/* Аккордеон — свёрнутый/развёрнутый */
+.downtime-accordion-content {
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.2s;
+    max-height: 2000px;
+    opacity: 1;
+}
+
+.downtime-accordion-content.collapsed {
+    max-height: 0;
+    opacity: 0;
 }
 
 .btn-copy-downtime {

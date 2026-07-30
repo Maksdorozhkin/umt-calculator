@@ -9,6 +9,7 @@ const OFFLINE_QUEUE_KEY = "umt_offline_queue";
 const CACHE_PRODUCTS_KEY = "umt_products_cache";
 const CACHE_MACHINE_PRODUCT_KEY = "umt_machine_product_cache";
 const CACHE_DOWNTIME_KEY = "umt_downtime_cache";
+const CACHE_BALANCE_KEY = "umt_balance_cache"; // { "1": 100, "3": 250 }
 
 /**
  * customFetch — wrapper around fetch().
@@ -190,6 +191,7 @@ document.addEventListener("DOMContentLoaded", function () {
   loadProductCache().then(() => {
     setupTabs();
     setupDowntimeSelectors();
+    setupShiftBalance();
     setupProductForms();
     setupTapeForm();
     setupAutocomplete();
@@ -237,8 +239,11 @@ function updateShiftDisplay() {
   const remaining = getRemainingMinutes();
   time.textContent = `До конца: ${formatTimeShort(remaining)}`;
 
-  // Обновление оставшегося времени для текущей машины
-  updateAvailableTime(currentMachine);
+  // Обновление оставшегося времени и баланса для всех машин
+  for (let i = 1; i <= 7; i++) {
+    calculateShiftBalance(i);
+    renderTimeline(i);
+  }
 }
 
 //  ОПРЕДЕЛЯЕМ КОНЕЦ СМЕНЫ
@@ -547,17 +552,290 @@ function setupDowntimeSelectors() {
     const durationInput = document.getElementById(`downtimeDuration${i}`);
     if (!select || !durationInput) continue;
 
+    // Типы с фиксированной длительностью — скрываем поле ввода
+    const fixedTypes = new Set(["roller_7", "roller_15"]);
+
     select.addEventListener("change", function () {
-      if (this.value === "custom") {
-        durationInput.style.display = "block";
-        durationInput.required = true;
-      } else {
+      if (fixedTypes.has(this.value)) {
         durationInput.style.display = "none";
         durationInput.required = false;
+      } else {
+        // Все остальные — ручной ввод
+        durationInput.style.display = "block";
+        durationInput.required = true;
       }
     });
   }
 }
+
+// === Баланс смены: инициализация + обработчики ввода факта выпуска ===
+function setupShiftBalance() {
+  for (let i = 1; i <= 7; i++) {
+    const input = document.getElementById(`factOutput${i}`);
+    if (!input) continue;
+
+    // Восстановить из кэша
+    const cached = getBalanceCache();
+    const saved = cached[String(i)];
+    if (saved && saved > 0) {
+      input.value = saved.toLocaleString("ru-RU").replace(/\s/g, " ");
+    }
+
+    // Автоформатирование + пересчёт при вводе
+    input.addEventListener("input", function () {
+      formatInputValue(this);
+      const raw = stripSpaces(this.value);
+      const val = parseInt(raw) || 0;
+      setBalanceCache(i, val);
+      calculateShiftBalance(i);
+    });
+  }
+}
+
+// localStorage helpers для баланса
+function getBalanceCache() {
+  try { return JSON.parse(localStorage.getItem(CACHE_BALANCE_KEY)) || {}; } catch { return {}; }
+}
+function setBalanceCache(machineId, value) {
+  const cache = getBalanceCache();
+  if (value > 0) {
+    cache[String(machineId)] = value;
+  } else {
+    delete cache[String(machineId)];
+  }
+  localStorage.setItem(CACHE_BALANCE_KEY, JSON.stringify(cache));
+}
+
+// === Расчёт баланса смены ===
+function calculateShiftBalance(machineId) {
+  const factInput = document.getElementById(`factOutput${machineId}`);
+  const elapsedEl = document.getElementById(`elapsedTime${machineId}`);
+  const expectedEl = document.getElementById(`expectedOutput${machineId}`);
+  const diffEl = document.getElementById(`outputDiff${machineId}`);
+  const unaccountedEl = document.getElementById(`unaccountedDowntime${machineId}`);
+  const warningRow = document.getElementById(`unaccountedRow${machineId}`);
+  const progressBar = document.getElementById(`progressBar${machineId}`);
+  const progressText = document.getElementById(`progressText${machineId}`);
+
+  if (!factInput || !elapsedEl) return;
+
+  // Прошло времени с начала смены (минуты)
+  const elapsedMinutes = getElapsedShiftMinutes();
+  const elapsedH = Math.floor(elapsedMinutes / 60);
+  const elapsedM = Math.round(elapsedMinutes % 60);
+  elapsedEl.textContent = `${elapsedH}ч ${elapsedM}мин`;
+
+  // Параметры продукта
+  const cavitations = parseInt(document.getElementById(`cavitations${machineId}`)?.value) || 0;
+  const cyclesPerMin = parseFloat(document.getElementById(`cycles${machineId}`)?.value) || 0;
+
+  if (cavitations === 0 || cyclesPerMin === 0) {
+    expectedEl.textContent = "0 шт";
+    diffEl.textContent = "—";
+    unaccountedEl.textContent = "—";
+    progressBar.style.width = "0%";
+    progressText.textContent = "0%";
+    return;
+  }
+
+  // Записанные простои (все)
+  const totalDowntime = getTotalDowntimeAllForMachine(machineId);
+
+  // Должно быть: (прошло_времени - простои) × такты × кавитации
+  const effectiveMinutes = Math.max(0, elapsedMinutes - totalDowntime);
+  const expectedOutput = Math.floor(effectiveMinutes * cyclesPerMin * cavitations);
+  expectedEl.textContent = `${expectedOutput.toLocaleString("ru-RU")} шт`;
+
+  // Факт выпуска
+  const factRaw = stripSpaces(factInput.value);
+  const factPieces = parseInt(factRaw) || 0;
+
+  // Разница: факт - расчёт
+  const diff = factPieces - expectedOutput;
+  diffEl.textContent = `${diff >= 0 ? "+" : ""}${diff.toLocaleString("ru-RU")} шт`;
+
+  // Неучтённый простой (минуты)
+  const piecesPerMin = cyclesPerMin * cavitations; // штук в минуту при полной работе
+  let unaccountedMinutes = 0;
+  if (diff < 0 && piecesPerMin > 0) {
+    unaccountedMinutes = Math.round(Math.abs(diff) / piecesPerMin);
+  }
+  unaccountedEl.textContent = `${unaccountedMinutes} мин`;
+
+  // Прогресс-бар: факт / должно_быть (в процентах)
+  let percent = 0;
+  if (expectedOutput > 0) {
+    percent = Math.round((factPieces / expectedOutput) * 100);
+  }
+  progressBar.style.width = `${Math.min(percent, 100)}%`;
+  progressText.textContent = `${percent}%`;
+
+  // Цветовая индикация
+  const balanceContainer = document.getElementById(`shiftBalance${machineId}`);
+  if (!balanceContainer) return;
+  balanceContainer.classList.remove("status-ok", "status-warning", "status-danger");
+
+  if (factPieces === 0) {
+    // Не ввели факт — нейтральный
+    return;
+  }
+
+  const tolerance = Math.max(expectedOutput * 0.05, 1); // ±5%
+  if (Math.abs(diff) <= tolerance) {
+    balanceContainer.classList.add("status-ok");
+    diffEl.textContent += " ✔";
+  } else if (diff < -tolerance) {
+    balanceContainer.classList.add("status-danger");
+    warningRow.style.display = "flex";
+  } else {
+    balanceContainer.classList.add("status-warning");
+    warningRow.style.display = "none";
+  }
+}
+
+// Прошло времени с начала смены (минуты)
+function getElapsedShiftMinutes() {
+  const now = new Date();
+  const hour = now.getHours();
+  let shiftStart;
+
+  if (hour >= 8 && hour < 20) {
+    // Дневная: началась сегодня в 08:00
+    shiftStart = new Date(now);
+    shiftStart.setHours(8, 0, 0, 0);
+  } else if (hour >= 20) {
+    // Ночная (вечер): началась сегодня в 20:00
+    shiftStart = new Date(now);
+    shiftStart.setHours(20, 0, 0, 0);
+  } else {
+    // Ночная (утро): началась вчера в 20:00
+    shiftStart = new Date(now);
+    shiftStart.setDate(shiftStart.getDate() - 1);
+    shiftStart.setHours(20, 0, 0, 0);
+  }
+
+  return Math.max(0, (now.getTime() - shiftStart.getTime()) / 60000);
+}
+
+// === Таймлайн смены ===
+function renderTimeline(machineId) {
+  const barEl = document.getElementById(`timelineBar${machineId}`);
+  const labelsEl = document.getElementById(`timelineLabels${machineId}`);
+  if (!barEl || !labelsEl) return;
+
+  // Загружаем простои из DOM (уже отрендерены в логе)
+  const logContainer = document.getElementById(`downtimeLog${machineId}`);
+  if (!logContainer) return;
+
+  const entries = [];
+  logContainer.querySelectorAll(".downtime-entry").forEach((el) => {
+    const durationText = el.querySelector(".downtime-duration")?.textContent || "";
+    const match = durationText.match(/(\d+)/);
+    if (!match) return;
+
+    // Извлекаем время из downtime-detail (первое HH:MM)
+    const detailEl = el.querySelector(".downtime-detail");
+    const timeMatch = detailEl?.textContent.match(/(\d{2}:\d{2})/);
+    if (!timeMatch) return;
+
+    const [h, m] = timeMatch[1].split(":").map(Number);
+    entries.push({
+      startMinutes: h * 60 + m,
+      duration: parseInt(match[1]),
+      type: el.querySelector(".downtime-type")?.textContent || "Простой",
+    });
+  });
+
+  if (entries.length === 0) {
+    barEl.innerHTML = `<div class="timeline-segment timeline-work" style="flex:1"></div>`;
+    labelsEl.innerHTML = "<span>Работа</span>";
+    return;
+  }
+
+  // Сортируем по времени начала
+  entries.sort((a, b) => a.startMinutes - b.startMinutes);
+
+  // Начало и конец смены (минуты от полуночи)
+  const elapsed = getElapsedShiftMinutes();
+  let shiftStartMin;
+  const hour = new Date().getHours();
+  if (hour >= 8 && hour < 20) {
+    shiftStartMin = 8 * 60; // 480
+  } else if (hour >= 20) {
+    shiftStartMin = 20 * 60; // 1200
+  } else {
+    shiftStartMin = 20 * 60 - 24 * 60; // вчера 20:00 → -360 (нормализуем)
+    shiftStartMin = -480;
+  }
+
+  const currentMinutes = shiftStartMin + elapsed;
+
+  // Строим сегменты: работа → простой → работа → ...
+  let segments = [];
+  let workStart = shiftStartMin;
+
+  for (const entry of entries) {
+    if (entry.startMinutes > currentMinutes) continue; // будущие — пропускаем
+
+    // Сегмент работы до простоя
+    const workDuration = entry.startMinutes - workStart;
+    if (workDuration > 0) {
+      segments.push({ type: "work", start: workStart, duration: workDuration });
+    }
+    // Сегмент простоя
+    segments.push({ type: "downtime", start: entry.startMinutes, duration: entry.duration, label: entry.type });
+    workStart = entry.startMinutes + entry.duration;
+  }
+
+  // Финальный сегмент работы (до текущего времени)
+  const finalWorkDuration = currentMinutes - workStart;
+  if (finalWorkDuration > 0) {
+    segments.push({ type: "work", start: workStart, duration: finalWorkDuration });
+  }
+
+  if (segments.length === 0) return;
+
+  // Рендер таймлайна
+  const totalMinutes = currentMinutes - shiftStartMin;
+  barEl.innerHTML = segments.map((seg) => {
+    const pct = (seg.duration / totalMinutes * 100).toFixed(2);
+    if (seg.type === "work") {
+      return `<div class="timeline-segment timeline-work" style="flex:${seg.duration}" title="Работа ${seg.duration} мин"></div>`;
+    } else {
+      const colorClass = getDowntimeColorClass(seg.label);
+      return `<div class="timeline-segment timeline-downtime ${colorClass}" style="flex:${seg.duration}" title="${seg.label}: ${seg.duration} мин"></div>`;
+    }
+  }).join("");
+
+  // Подписи под таймлайном (только если сегмент > 5 мин)
+  labelsEl.innerHTML = segments.map((seg) => {
+    if (seg.duration < 5) return "";
+    const label = seg.type === "work" ? `${seg.duration}мин` : seg.label;
+    return `<span class="timeline-label ${seg.type === 'work' ? '' : 'downtime'}">${label}</span>`;
+  }).join("");
+}
+
+function getDowntimeColorClass(typeName) {
+  if (typeName.includes("ролик")) return "color-roller";
+  if (typeName.includes("брак") || typeName.includes("дробилка")) return "color-scrap";
+  if (typeName.includes("поломка")) return "color-breakdown";
+  if (typeName.includes("настройка")) return "color-setup";
+  return "color-default";
+}
+
+// Аккордеон лога простоев
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll(".downtime-accordion-btn").forEach((btn) => {
+    btn.addEventListener("click", function () {
+      const machineId = this.dataset.machine;
+      const content = document.getElementById(`downtimeAccordion${machineId}`);
+      if (content) {
+        content.classList.toggle("collapsed");
+        this.textContent = content.classList.contains("collapsed") ? "⏱ Простои ▾" : "⏱ Простои ▴";
+      }
+    });
+  });
+});
 
 // Форма калькулятора ленты
 function setupTapeForm() {
@@ -758,6 +1036,8 @@ async function loadMachineProduct(machineId) {
 
   updateShiftOutput(machineId);
   updateHourlyRate(machineId);
+  calculateShiftBalance(machineId);
+  renderTimeline(machineId);
 }
 
 function clearForm(machineId) {
@@ -967,7 +1247,13 @@ async function logDowntime(machineId) {
   ).value;
   let duration = 0;
 
-  if (downtimeType === "custom") {
+  // Фиксированные типы
+  const fixedDurations = { roller_7: 7, roller_15: 15 };
+
+  if (fixedDurations[downtimeType] !== undefined) {
+    duration = fixedDurations[downtimeType];
+  } else {
+    // Все остальные — ручной ввод
     duration = parseInt(
       document.getElementById(`downtimeDuration${machineId}`).value,
     );
@@ -975,9 +1261,6 @@ async function logDowntime(machineId) {
       showNotification("Укажите длительность простоя", "error");
       return;
     }
-  } else {
-    const durations = { lunch: 30, roller_7: 7, roller_15: 15 };
-    duration = durations[downtimeType];
   }
 
   const note = document.getElementById(`downtimeNote${machineId}`).value;
@@ -1002,6 +1285,8 @@ async function logDowntime(machineId) {
       document.getElementById(`downtimeNote${machineId}`).value = "";
       await loadDowntimeLog(machineId);
       updateAvailableTime(machineId);
+      calculateShiftBalance(machineId);
+      renderTimeline(machineId);
     }
   } catch (error) {
     // Офлайн-режим: добавляем в локальный кэш
@@ -1024,6 +1309,8 @@ async function logDowntime(machineId) {
     document.getElementById(`downtimeNote${machineId}`).value = "";
     renderDowntimeLog(machineId, cachedAll[String(machineId)]);
     updateAvailableTime(machineId);
+    calculateShiftBalance(machineId);
+    renderTimeline(machineId);
     showNotification("Простой добавлен офлайн", "info");
   }
 }
@@ -1041,8 +1328,11 @@ function renderDowntimeLog(machineId, downtimes) {
   }
 
   const typeNames = {
-    roller_7: "Ролик (7 мин)",
-    roller_15: "Ролик (15 мин)",
+    roller_7: "Замена ролика (7 мин)",
+    roller_15: "Замена ролика (15 мин)",
+    scrap_tape: "Брак ленты / дробилка",
+    breakdown: "Поломка",
+    setup: "Настройка / дробилка",
     custom: "Произвольный",
   };
 
@@ -1637,8 +1927,11 @@ async function loadReportData(machineId) {
 
     // Сформировать таблицу
     const typeNames = {
-      roller_7: "Ролик (7 мин)",
-      roller_15: "Ролик (15 мин)",
+      roller_7: "Замена ролика (7 мин)",
+      roller_15: "Замена ролика (15 мин)",
+      scrap_tape: "Брак ленты / дробилка",
+      breakdown: "Поломка",
+      setup: "Настройка / дробилка",
       custom: "Произвольный",
     };
 
@@ -1685,8 +1978,11 @@ window.copyDowntimeReport = async function (machineId) {
     const now = new Date();
     const dateStr = now.toLocaleDateString("ru-RU");
     const typeNames = {
-      roller_7: "Ролик (7 мин)",
-      roller_15: "Ролик (15 мин)",
+      roller_7: "Замена ролика (7 мин)",
+      roller_15: "Замена ролика (15 мин)",
+      scrap_tape: "Брак ленты / дробилка",
+      breakdown: "Поломка",
+      setup: "Настройка / дробилка",
       custom: "Произвольный",
     };
 
