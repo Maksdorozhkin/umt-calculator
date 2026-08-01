@@ -241,11 +241,21 @@
                                     <input
                                         type="text"
                                         inputmode="numeric"
-                                        id="factOutput{{ machine.id }}"
+                                        id="factPallets{{ machine.id }}"
                                         placeholder="0"
                                         data-machine="{{ machine.id }}"
+                                        style="width:60px;text-align:center"
                                     />
-                                    <span class="balance-unit">шт</span>
+                                    <span class="balance-unit">п.</span>
+                                    <input
+                                        type="text"
+                                        inputmode="numeric"
+                                        id="factBoxes{{ machine.id }}"
+                                        placeholder="0"
+                                        data-machine="{{ machine.id }}"
+                                        style="width:60px;text-align:center"
+                                    />
+                                    <span class="balance-unit">кор.</span>
                                 </div>
                                 <div class="balance-row">
                                     <span class="balance-label">⏱ Прошло времени:</span>
@@ -253,11 +263,11 @@
                                 </div>
                                 <div class="balance-row">
                                     <span class="balance-label">📊 Должно быть:</span>
-                                    <span class="balance-value" id="expectedOutput{{ machine.id }}">0 шт</span>
+                                    <span class="balance-value" id="expectedOutput{{ machine.id }}">0 п. 0 кор.</span>
                                 </div>
                                 <div class="balance-row">
                                     <span class="balance-label">🔍 Разница:</span>
-                                    <span class="balance-value" id="outputDiff{{ machine.id }}">0 шт</span>
+                                    <span class="balance-value" id="outputDiff{{ machine.id }}">0 п. 0 кор.</span>
                                 </div>
                                 <div class="balance-row warning-row" id="unaccountedRow{{ machine.id }}">
                                     <span class="balance-label">⚠️ ≈ Неучтённый простой:</span>

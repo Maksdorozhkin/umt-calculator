@@ -568,37 +568,55 @@ function setupDowntimeSelectors() {
   }
 }
 
+// === Хелпер: штуки → паллеты + коробки (округление до целой коробки вниз) ===
+function piecesToPalletsBoxes(pieces, piecesPerBox, boxesPerPallet) {
+  const totalBoxes = Math.floor(pieces / piecesPerBox);
+  const fullPallets = Math.floor(totalBoxes / boxesPerPallet);
+  const leftoverBoxes = totalBoxes - fullPallets * boxesPerPallet;
+  return { pallets: fullPallets, boxes: leftoverBoxes };
+}
+
+// Форматирование "Xп. Yкор." / "Yкор." / "0"
+function formatPalletsBoxes(pallets, boxes) {
+  if (pallets > 0) return `${pallets} п. ${boxes} кор.`;
+  if (boxes > 0) return `${boxes} кор.`;
+  return "0";
+}
+
 // === Баланс смены: инициализация + обработчики ввода факта выпуска ===
 function setupShiftBalance() {
   for (let i = 1; i <= 7; i++) {
-    const input = document.getElementById(`factOutput${i}`);
-    if (!input) continue;
+    const palletsInput = document.getElementById(`factPallets${i}`);
+    const boxesInput = document.getElementById(`factBoxes${i}`);
+    if (!palletsInput || !boxesInput) continue;
 
     // Восстановить из кэша
     const cached = getBalanceCache();
     const saved = cached[String(i)];
-    if (saved && saved > 0) {
-      input.value = saved.toLocaleString("ru-RU").replace(/\s/g, " ");
+    if (saved && (saved.pallets > 0 || saved.boxes > 0)) {
+      palletsInput.value = saved.pallets;
+      boxesInput.value = saved.boxes;
     }
 
-    // Автоформатирование + пересчёт при вводе
-    input.addEventListener("input", function () {
-      formatInputValue(this);
-      const raw = stripSpaces(this.value);
-      const val = parseInt(raw) || 0;
-      setBalanceCache(i, val);
+    // Обработчики ввода для обоих полей
+    const onInput = function () {
+      const p = parseInt(stripSpaces(palletsInput.value)) || 0;
+      const b = parseInt(stripSpaces(boxesInput.value)) || 0;
+      setBalanceCache(i, { pallets: p, boxes: b });
       calculateShiftBalance(i);
-    });
+    };
+    palletsInput.addEventListener("input", onInput);
+    boxesInput.addEventListener("input", onInput);
   }
 }
 
-// localStorage helpers для баланса
+// localStorage helpers для баланса — теперь хранит { pallets, boxes }
 function getBalanceCache() {
   try { return JSON.parse(localStorage.getItem(CACHE_BALANCE_KEY)) || {}; } catch { return {}; }
 }
 function setBalanceCache(machineId, value) {
   const cache = getBalanceCache();
-  if (value > 0) {
+  if (value.pallets > 0 || value.boxes > 0) {
     cache[String(machineId)] = value;
   } else {
     delete cache[String(machineId)];
@@ -606,9 +624,10 @@ function setBalanceCache(machineId, value) {
   localStorage.setItem(CACHE_BALANCE_KEY, JSON.stringify(cache));
 }
 
-// === Расчёт баланса смены ===
+// === Расчёт баланса смены (факт, должно быть и разница — в паллетах/коробках) ===
 function calculateShiftBalance(machineId) {
-  const factInput = document.getElementById(`factOutput${machineId}`);
+  const palletsInput = document.getElementById(`factPallets${machineId}`);
+  const boxesInput = document.getElementById(`factBoxes${machineId}`);
   const elapsedEl = document.getElementById(`elapsedTime${machineId}`);
   const expectedEl = document.getElementById(`expectedOutput${machineId}`);
   const diffEl = document.getElementById(`outputDiff${machineId}`);
@@ -617,7 +636,7 @@ function calculateShiftBalance(machineId) {
   const progressBar = document.getElementById(`progressBar${machineId}`);
   const progressText = document.getElementById(`progressText${machineId}`);
 
-  if (!factInput || !elapsedEl) return;
+  if (!palletsInput || !boxesInput || !elapsedEl) return;
 
   // Прошло времени с начала смены (минуты)
   const elapsedMinutes = getElapsedShiftMinutes();
@@ -628,9 +647,11 @@ function calculateShiftBalance(machineId) {
   // Параметры продукта
   const cavitations = parseInt(document.getElementById(`cavitations${machineId}`)?.value) || 0;
   const cyclesPerMin = parseFloat(document.getElementById(`cycles${machineId}`)?.value) || 0;
+  const piecesPerBox = parseInt(document.getElementById(`piecesPerBox${machineId}`)?.value) || 1;
+  const boxesPerPallet = parseInt(document.getElementById(`boxesPerPallet${machineId}`)?.value) || 1;
 
   if (cavitations === 0 || cyclesPerMin === 0) {
-    expectedEl.textContent = "0 шт";
+    expectedEl.textContent = "0";
     diffEl.textContent = "—";
     unaccountedEl.textContent = "—";
     progressBar.style.width = "0%";
@@ -641,31 +662,35 @@ function calculateShiftBalance(machineId) {
   // Записанные простои (все)
   const totalDowntime = getTotalDowntimeAllForMachine(machineId);
 
-  // Должно быть: (прошло_времени - простои) × такты × кавитации
+  // Должно быть: (прошло_времени - простои) × такты × кавитации → штуки → паллеты/коробки
   const effectiveMinutes = Math.max(0, elapsedMinutes - totalDowntime);
-  const expectedOutput = Math.floor(effectiveMinutes * cyclesPerMin * cavitations);
-  expectedEl.textContent = `${expectedOutput.toLocaleString("ru-RU")} шт`;
+  const expectedPieces = Math.floor(effectiveMinutes * cyclesPerMin * cavitations);
+  const expectedPB = piecesToPalletsBoxes(expectedPieces, piecesPerBox, boxesPerPallet);
+  expectedEl.textContent = formatPalletsBoxes(expectedPB.pallets, expectedPB.boxes);
 
-  // Факт выпуска
-  const factRaw = stripSpaces(factInput.value);
-  const factPieces = parseInt(factRaw) || 0;
+  // Факт выпуска: паллеты + коробки → штуки (для расчётов)
+  const factPallets = parseInt(stripSpaces(palletsInput.value)) || 0;
+  const factBoxes = parseInt(stripSpaces(boxesInput.value)) || 0;
+  const factPieces = factPallets * boxesPerPallet * piecesPerBox + factBoxes * piecesPerBox;
 
-  // Разница: факт - расчёт
-  const diff = factPieces - expectedOutput;
-  diffEl.textContent = `${diff >= 0 ? "+" : ""}${diff.toLocaleString("ru-RU")} шт`;
+  // Разница: факт - расчёт (в штуках для точности, выводим в паллетах/коробках)
+  const diffPieces = factPieces - expectedPieces;
+  const diffPB = piecesToPalletsBoxes(Math.abs(diffPieces), piecesPerBox, boxesPerPallet);
+  const diffSign = diffPieces >= 0 ? "+" : "-";
+  diffEl.textContent = `${diffSign}${formatPalletsBoxes(diffPB.pallets, diffPB.boxes)}`;
 
   // Неучтённый простой (минуты)
   const piecesPerMin = cyclesPerMin * cavitations; // штук в минуту при полной работе
   let unaccountedMinutes = 0;
-  if (diff < 0 && piecesPerMin > 0) {
-    unaccountedMinutes = Math.round(Math.abs(diff) / piecesPerMin);
+  if (diffPieces < 0 && piecesPerMin > 0) {
+    unaccountedMinutes = Math.round(Math.abs(diffPieces) / piecesPerMin);
   }
   unaccountedEl.textContent = `${unaccountedMinutes} мин`;
 
   // Прогресс-бар: факт / должно_быть (в процентах)
   let percent = 0;
-  if (expectedOutput > 0) {
-    percent = Math.round((factPieces / expectedOutput) * 100);
+  if (expectedPieces > 0) {
+    percent = Math.round((factPieces / expectedPieces) * 100);
   }
   progressBar.style.width = `${Math.min(percent, 100)}%`;
   progressText.textContent = `${percent}%`;
@@ -680,11 +705,11 @@ function calculateShiftBalance(machineId) {
     return;
   }
 
-  const tolerance = Math.max(expectedOutput * 0.05, 1); // ±5%
-  if (Math.abs(diff) <= tolerance) {
+  const tolerance = Math.max(expectedPieces * 0.05, 1); // ±5%
+  if (Math.abs(diffPieces) <= tolerance) {
     balanceContainer.classList.add("status-ok");
     diffEl.textContent += " ✔";
-  } else if (diff < -tolerance) {
+  } else if (diffPieces < -tolerance) {
     balanceContainer.classList.add("status-danger");
     warningRow.style.display = "flex";
   } else {
