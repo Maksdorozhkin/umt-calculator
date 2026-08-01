@@ -1386,6 +1386,28 @@ header {
     opacity: 0;
 }
 
+.report-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-primary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.report-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+    border-color: var(--accent);
+}
+
 .btn-copy-downtime {
     display: inline-flex;
     align-items: center;
