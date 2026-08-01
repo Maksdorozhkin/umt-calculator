@@ -1536,4 +1536,20 @@ header {
         align-items: flex-start;
         gap: 8px;
     }
+
+    /* Компактные кнопки простоев на мобильных */
+    .downtime-section-header {
+        gap: 4px;
+    }
+
+    .report-btn,
+    .btn-copy-downtime {
+        padding: 3px 6px;
+        font-size: 0.75rem;
+    }
+
+    .downtime-accordion-btn {
+        padding: 3px 6px;
+        font-size: 0.75rem;
+    }
 }
