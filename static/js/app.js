@@ -720,8 +720,7 @@ function getElapsedShiftMinutes() {
 // === Таймлайн смены ===
 function renderTimeline(machineId) {
   const barEl = document.getElementById(`timelineBar${machineId}`);
-  const labelsEl = document.getElementById(`timelineLabels${machineId}`);
-  if (!barEl || !labelsEl) return;
+  if (!barEl) return;
 
   // Загружаем простои из DOM (уже отрендерены в логе)
   const logContainer = document.getElementById(`downtimeLog${machineId}`);
@@ -748,7 +747,6 @@ function renderTimeline(machineId) {
 
   if (entries.length === 0) {
     barEl.innerHTML = `<div class="timeline-segment timeline-work" style="flex:1"></div>`;
-    labelsEl.innerHTML = "<span>Работа</span>";
     return;
   }
 
@@ -807,12 +805,7 @@ function renderTimeline(machineId) {
     }
   }).join("");
 
-  // Подписи под таймлайном (только если сегмент > 5 мин)
-  labelsEl.innerHTML = segments.map((seg) => {
-    if (seg.duration < 5) return "";
-    const label = seg.type === "work" ? `${seg.duration}мин` : seg.label;
-    return `<span class="timeline-label ${seg.type === 'work' ? '' : 'downtime'}">${label}</span>`;
-  }).join("");
+  // Тултипы на сегментах уже содержат всю информацию (длительность, тип)
 }
 
 function getDowntimeColorClass(typeName) {

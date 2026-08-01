@@ -628,21 +628,6 @@ header {
 .color-setup { background: #457b9d; }
 .color-default { background: #8b8da3; }
 
-.timeline-labels {
-    display: flex;
-    margin-top: 2px;
-    font-size: 0.65rem;
-    color: var(--text-muted);
-    gap: 1px;
-}
-
-.timeline-label {
-    text-align: center;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
 /* ===== Баланс смены ===== */
 .shift-balance {
     margin: 12px 0;
