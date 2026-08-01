@@ -1836,9 +1836,18 @@ function setupItemsCalculator() {
 
 // Pull-to-Refresh
 document.addEventListener("DOMContentLoaded", () => {
+  // Показываем тост после успешного обновления
+  if (sessionStorage.getItem("ptr_refreshed") === "true") {
+    sessionStorage.removeItem("ptr_refreshed");
+    setTimeout(() => showNotification("✓ Обновлено", "success"), 400);
+  }
+
   const ptrOverlay = document.getElementById("ptrOverlay");
   const pullHint = document.getElementById("pullHint");
   if (!ptrOverlay) return;
+
+  // Текстовый элемент внутри оверлея
+  const ptrText = ptrOverlay.querySelector("span");
 
   let startY = 0;
   let pulling = false;
@@ -1864,6 +1873,15 @@ document.addEventListener("DOMContentLoaded", () => {
         ptrOverlay.classList.add("active");
         ptrOverlay.style.height = Math.min(dy, 80) + "px";
         if (pullHint) pullHint.classList.add("hidden");
+
+        // Меняем текст в зависимости от прогресса
+        if (dy >= THRESHOLD && ptrText) {
+          ptrText.textContent = "Отпустите для обновления";
+          ptrOverlay.classList.add("ready");
+        } else if (ptrText) {
+          ptrText.textContent = "Потяните ↓";
+          ptrOverlay.classList.remove("ready");
+        }
       }
     },
     { passive: true },
@@ -1874,13 +1892,22 @@ document.addEventListener("DOMContentLoaded", () => {
     pulling = false;
     const currentHeight = parseInt(ptrOverlay.style.height) || 0;
     if (currentHeight >= THRESHOLD) {
+      // Фаза обновления: спиннер + текст
       refreshing = true;
       ptrOverlay.classList.add("active");
+      ptrOverlay.classList.remove("ready");
       ptrOverlay.style.height = "48px";
+      if (ptrText) ptrText.textContent = "Обновление…";
+
+      // Запоминаем и перезагружаем
+      sessionStorage.setItem("ptr_refreshed", "true");
       window.location.reload();
     } else {
+      // Не дотянули — плавно скрываем
       ptrOverlay.classList.remove("active");
+      ptrOverlay.classList.remove("ready");
       ptrOverlay.style.height = "0";
+      if (ptrText) ptrText.textContent = "Обновление…";
       if (pullHint) pullHint.classList.remove("hidden");
     }
   });
