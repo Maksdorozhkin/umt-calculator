@@ -231,9 +231,7 @@
                         <!-- Отчет простоев -->
                         <div class="downtime-section">
                             <div class="downtime-section-header">
-                                <span>⏱ Отчет простоев</span>
-                                <span class="report-icon" onclick="openReportTab({{ machine.id }})" title="Открыть отчет по простоям">⏱ Простои</span>
-                                <button class="btn-copy-downtime" data-machine="{{ machine.id }}" title="Копировать отчет простоев" onclick="copyDowntimeReport({{ machine.id }})">📋 Копировать простои</button>
+                                <span class="report-icon" onclick="openReportTab({{ machine.id }})" title="Открыть отчет по простоям">⏱ Отчет простоев</span>
                             </div>
                             <!-- Таймлайн смены -->
                             <div class="timeline-container" id="timelineContainer{{ machine.id }}">
