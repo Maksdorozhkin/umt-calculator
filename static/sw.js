@@ -1,6 +1,6 @@
 // Инкрементируйте версию при КАЖДОМ изменении кода (v1 -> v2 -> v3)
-const CACHE_NAME = "umt-v3.11";
-const STATIC_CACHE = "umt-static-v3.11";
+const CACHE_NAME = "umt-v3.12";
+const STATIC_CACHE = "umt-static-v3.12";
 
 // ── Assets to precache (ВНИМАНИЕ: '/sw.js' отсюда УДАЛЕН!) ──
 const PRECACHE_URLS = [
@@ -84,9 +84,9 @@ async function staleWhileRevalidateStatic(request) {
 	const cached = await caches.match(request);
 	const fetchPromise = fetch(request)
 		.then(async (fresh) => {
-			if (fresh.ok) {
+			if (fresh.ok && request.url.startsWith("http")) {
 				const cache = await caches.open(STATIC_CACHE);
-				cache.put(request, fresh.clone());
+				await cache.put(request, fresh.clone());
 			}
 			return fresh;
 		})
