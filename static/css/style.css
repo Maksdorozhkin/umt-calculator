@@ -590,43 +590,7 @@ header {
     letter-spacing: 0.5px;
 }
 
-/* ===== Таймлайн смены ===== */
-.timeline-container {
-    margin: 12px 0;
-    padding: 0 4px;
-}
 
-.timeline-bar {
-    display: flex;
-    height: 28px;
-    border-radius: 6px;
-    overflow: hidden;
-    background: var(--bg-primary);
-    border: 1px solid var(--border);
-}
-
-.timeline-segment {
-    transition: opacity 0.2s;
-    min-width: 2px;
-}
-
-.timeline-segment:hover {
-    opacity: 0.8;
-}
-
-.timeline-work {
-    background: var(--success);
-}
-
-.timeline-downtime {
-    /* цвет задаётся через color-* классы */
-}
-
-.color-roller { background: #f4a261; }
-.color-scrap { background: #e76f51; }
-.color-breakdown { background: #e63946; }
-.color-setup { background: #457b9d; }
-.color-default { background: #8b8da3; }
 
 /* ===== Баланс смены ===== */
 .shift-balance {

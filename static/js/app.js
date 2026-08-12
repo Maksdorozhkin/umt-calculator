@@ -242,7 +242,7 @@ function updateShiftDisplay() {
   // Обновление оставшегося времени и баланса для всех машин
   for (let i = 1; i <= 7; i++) {
     calculateShiftBalance(i);
-    renderTimeline(i);
+
   }
 }
 
@@ -742,104 +742,7 @@ function getElapsedShiftMinutes() {
   return Math.max(0, (now.getTime() - shiftStart.getTime()) / 60000);
 }
 
-// === Таймлайн смены ===
-function renderTimeline(machineId) {
-  const barEl = document.getElementById(`timelineBar${machineId}`);
-  if (!barEl) return;
 
-  // Загружаем простои из DOM (уже отрендерены в логе)
-  const logContainer = document.getElementById(`downtimeLog${machineId}`);
-  if (!logContainer) return;
-
-  const entries = [];
-  logContainer.querySelectorAll(".downtime-entry").forEach((el) => {
-    const durationText = el.querySelector(".downtime-duration")?.textContent || "";
-    const match = durationText.match(/(\d+)/);
-    if (!match) return;
-
-    // Извлекаем время из downtime-detail (первое HH:MM)
-    const detailEl = el.querySelector(".downtime-detail");
-    const timeMatch = detailEl?.textContent.match(/(\d{2}:\d{2})/);
-    if (!timeMatch) return;
-
-    const [h, m] = timeMatch[1].split(":").map(Number);
-    entries.push({
-      startMinutes: h * 60 + m,
-      duration: parseInt(match[1]),
-      type: el.querySelector(".downtime-type")?.textContent || "Простой",
-    });
-  });
-
-  if (entries.length === 0) {
-    barEl.innerHTML = `<div class="timeline-segment timeline-work" style="flex:1"></div>`;
-    return;
-  }
-
-  // Сортируем по времени начала
-  entries.sort((a, b) => a.startMinutes - b.startMinutes);
-
-  // Начало и конец смены (минуты от полуночи)
-  const elapsed = getElapsedShiftMinutes();
-  let shiftStartMin;
-  const hour = new Date().getHours();
-  if (hour >= 8 && hour < 20) {
-    shiftStartMin = 8 * 60; // 480
-  } else if (hour >= 20) {
-    shiftStartMin = 20 * 60; // 1200
-  } else {
-    shiftStartMin = 20 * 60 - 24 * 60; // вчера 20:00 → -360 (нормализуем)
-    shiftStartMin = -480;
-  }
-
-  const currentMinutes = shiftStartMin + elapsed;
-
-  // Строим сегменты: работа → простой → работа → ...
-  let segments = [];
-  let workStart = shiftStartMin;
-
-  for (const entry of entries) {
-    if (entry.startMinutes > currentMinutes) continue; // будущие — пропускаем
-
-    // Сегмент работы до простоя
-    const workDuration = entry.startMinutes - workStart;
-    if (workDuration > 0) {
-      segments.push({ type: "work", start: workStart, duration: workDuration });
-    }
-    // Сегмент простоя
-    segments.push({ type: "downtime", start: entry.startMinutes, duration: entry.duration, label: entry.type });
-    workStart = entry.startMinutes + entry.duration;
-  }
-
-  // Финальный сегмент работы (до текущего времени)
-  const finalWorkDuration = currentMinutes - workStart;
-  if (finalWorkDuration > 0) {
-    segments.push({ type: "work", start: workStart, duration: finalWorkDuration });
-  }
-
-  if (segments.length === 0) return;
-
-  // Рендер таймлайна
-  const totalMinutes = currentMinutes - shiftStartMin;
-  barEl.innerHTML = segments.map((seg) => {
-    const pct = (seg.duration / totalMinutes * 100).toFixed(2);
-    if (seg.type === "work") {
-      return `<div class="timeline-segment timeline-work" style="flex:${seg.duration}" title="Работа ${seg.duration} мин"></div>`;
-    } else {
-      const colorClass = getDowntimeColorClass(seg.label);
-      return `<div class="timeline-segment timeline-downtime ${colorClass}" style="flex:${seg.duration}" title="${seg.label}: ${seg.duration} мин"></div>`;
-    }
-  }).join("");
-
-  // Тултипы на сегментах уже содержат всю информацию (длительность, тип)
-}
-
-function getDowntimeColorClass(typeName) {
-  if (typeName.includes("ролик")) return "color-roller";
-  if (typeName.includes("брак") || typeName.includes("дробилка")) return "color-scrap";
-  if (typeName.includes("поломка")) return "color-breakdown";
-  if (typeName.includes("настройка")) return "color-setup";
-  return "color-default";
-}
 
 // Аккордеон лога простоев
 document.addEventListener("DOMContentLoaded", () => {
@@ -1055,7 +958,6 @@ async function loadMachineProduct(machineId) {
   updateShiftOutput(machineId);
   updateHourlyRate(machineId);
   calculateShiftBalance(machineId);
-  renderTimeline(machineId);
 }
 
 function clearForm(machineId) {
@@ -1304,7 +1206,6 @@ async function logDowntime(machineId) {
       await loadDowntimeLog(machineId);
       updateAvailableTime(machineId);
       calculateShiftBalance(machineId);
-      renderTimeline(machineId);
     }
   } catch (error) {
     // Офлайн-режим: добавляем в локальный кэш
@@ -1328,7 +1229,6 @@ async function logDowntime(machineId) {
     renderDowntimeLog(machineId, cachedAll[String(machineId)]);
     updateAvailableTime(machineId);
     calculateShiftBalance(machineId);
-    renderTimeline(machineId);
     showNotification("Простой добавлен офлайн", "info");
   }
 }
