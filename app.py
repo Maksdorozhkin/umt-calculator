@@ -103,13 +103,11 @@ def calculate_production(product, machine_id):
         return 0, 0, 0
 
     shift_start = shift_end - timedelta(hours=11, minutes=50)
-    now = datetime.now()
-    # Фиксированные простои (roller_7, roller_15) имеют timestamp = now - duration,
-    # поэтому cutoff должен учитывать максимальную длительность простоя.
-    cutoff = now - timedelta(minutes=15)
+    # Все простои текущей смены (прошедшие и будущие) — как в клиентском
+    # calculateProduction() из app.js.
     downtimes = DowntimeLog.query.filter(
         DowntimeLog.machine_id == machine_id,
-        DowntimeLog.timestamp >= cutoff,
+        DowntimeLog.timestamp >= shift_start,
         DowntimeLog.timestamp <= shift_end,
     ).all()
 
