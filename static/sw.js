@@ -1,6 +1,6 @@
 // Инкрементируйте версию при КАЖДОМ изменении кода (v1 -> v2 -> v3)
-const CACHE_NAME = "umt-v3.15";
-const STATIC_CACHE = "umt-static-v3.15";
+const CACHE_NAME = "umt-v3.16";
+const STATIC_CACHE = "umt-static-v3.16";
 
 // ── Assets to precache (ВНИМАНИЕ: '/sw.js' отсюда УДАЛЕН!) ──
 const PRECACHE_URLS = [
@@ -82,17 +82,41 @@ async function networkFirstApi(request) {
 // При следующем открытии приложения пользователь гарантированно увидит обновления.
 async function staleWhileRevalidateStatic(request) {
   const cached = await caches.match(request);
-  const fetchPromise = fetch(request)
-    .then(async (fresh) => {
-      if (fresh.ok && request.url.startsWith("http")) {
-        const cache = await caches.open(STATIC_CACHE);
-        await cache.put(request, fresh.clone());
-      }
-      return fresh;
-    })
-    .catch(() => null);
 
-  return cached || fetchPromise;
+  // 1. Есть кэш → отдаём сразу, в фоне обновляем (SWR)
+  if (cached) {
+    void fetch(request)
+      .then((fresh) => {
+        if (fresh.ok) {
+          return caches
+            .open(STATIC_CACHE)
+            .then((cache) => cache.put(request, fresh.clone()));
+        }
+      })
+      .catch(() => {}); // фоновая ошибка не важна
+    return cached;
+  }
+
+  // 2. Нет кэша → пробуем сеть
+  try {
+    const fresh = await fetch(request);
+    if (fresh.ok) {
+      const cache = await caches.open(STATIC_CACHE);
+      await cache.put(request, fresh.clone());
+    }
+    return fresh;
+  } catch {
+    // 3. Офлайн и нет кэша → fallback вместо null
+    if (request.mode === "navigate") {
+      // Навигация (открытие страницы) → отдаём кэшированный "/"
+      return (
+        (await caches.match("/")) ||
+        new Response("Offline", { status: 503, statusText: "Offline" })
+      );
+    }
+    // Ассет (js/css/иконка) → честная 503, браузер просто не загрузит файл
+    return new Response("Offline", { status: 503, statusText: "Offline" });
+  }
 }
 
 // ── Background sync ────────────────────────────────────
