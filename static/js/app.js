@@ -1064,21 +1064,42 @@ function calculateProduction(machineId) {
     return;
   }
 
-  // Вычитаем все простои за смену (и прошедшие, и будущие)
-  const totalDowntime = getTotalDowntimeAllForMachine(machineId);
-  const effectiveTime = Math.max(0, remainingMinutes - totalDowntime);
+  // === СИНХРОНИЗИРОВАННАЯ ЛОГИКА ТЕКУЩЕГО ПРОСТОЯ ===
+  let currentDowntimeMinutes = 0;
+  const now = new Date();
 
-  // Формула: pieces = time * cycles_per_min * cavitations
-  const totalPieces = effectiveTime * cyclesPerMin * cavitations;
-  const totalBoxes = totalPieces / piecesPerBox;
-  const totalPallets = totalBoxes / boxesPerPallet;
+  const allDowntimes = getDowntimeListForMachine(machineId) || [];
 
-  const fullPallets = Math.floor(totalPallets);
-  const remainingBoxes = Math.floor(totalBoxes) - (fullPallets * boxesPerPallet);
+  allDowntimes.forEach(d => {
+    const downtimeStart = new Date(d.timestamp);
+    const duration = Number(d.duration_minutes || 0);
+    const downtimeEnd = new Date(downtimeStart.getTime() + duration * 60 * 1000);
+
+    if (downtimeStart <= now && downtimeEnd > now) {
+      const remainingDowntimeForThisLog = (downtimeEnd - now) / 1000 / 60;
+      currentDowntimeMinutes = Math.min(remainingMinutes, remainingDowntimeForThisLog);
+    }
+  });
+
+  const effectiveTime = Math.max(0, remainingMinutes - currentDowntimeMinutes);
+
+  // === ТОЧНЫЙ КАСКАДНЫЙ РАСЧЕТ (без float-ошибок) ===
+  const totalPieces = Math.floor(effectiveTime * cyclesPerMin * cavitations);
+
+  const piecesPerPallet = piecesPerBox * boxesPerPallet;
+
+  // 1. Считаем целые паллеты
+  const fullPallets = Math.floor(totalPieces / piecesPerPallet);
+  const remPiecesAfterPallets = totalPieces % piecesPerPallet;
+
+  // 2. Из остатка штук считаем целые коробки
+  const remainingBoxes = Math.floor(remPiecesAfterPallets / piecesPerBox);
+  // 3. Оставшиеся штуки, которые не поместились в целую коробку
+  const remainingPieces = remPiecesAfterPallets % piecesPerBox;
 
   document.getElementById(`pallets${machineId}`).textContent = fullPallets;
   document.getElementById(`boxes${machineId}`).textContent = Math.max(0, remainingBoxes);
-  document.getElementById(`pieces${machineId}`).textContent = Math.floor(totalPieces);
+  document.getElementById(`pieces${machineId}`).textContent = remainingPieces;
 
   // Показать результаты
   const resultsPanel = document.getElementById(`results${machineId}`);
@@ -1126,6 +1147,17 @@ function resetCalculator(machineId) {
   if (resultsPanel) resultsPanel.style.display = "none";
   updateAvailableTime(machineId);
   showNotification("Калькулятор сброшен", "success");
+}
+
+/**
+ * Получить список объектов простоев машины (исходный массив, а не сумма минут).
+ * Источник — кэш localStorage (те же данные, что отдаёт сервер /api/downtime),
+ * поэтому работает и офлайн. Каждый элемент: { id, downtime_type,
+ * duration_minutes, note, timestamp (ISO), is_future }.
+ */
+function getDowntimeListForMachine(machineId) {
+  const cachedAll = getCachedDowntimes();
+  return cachedAll[String(machineId)] || [];
 }
 
 // Получение общего времени простоя для машины (только БУДУЩИЕ простои)

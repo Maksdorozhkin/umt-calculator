@@ -5,3 +5,17 @@ dist/
 build/
 *.log
 
+# Временные файлы и логи самого агента Pi
+.pi/
+.pi-subagents/
+*.pid
+
+# Кэш локальных инструментов и компиляторов (если применимо)
+.cache/
+.eslintcache
+.tsbuildinfo
+
+# Скриншоты или отчеты об ошибках, если субагенты запускают тесты
+cypress/screenshots/
+cypress/videos/
+coverage/

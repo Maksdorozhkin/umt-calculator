@@ -94,36 +94,63 @@ def get_current_shift():
 
 
 def calculate_production(product, machine_id):
-    """Рассчитывает выпуск до конца смены. Возвращает: (паллеты, коробки_остаток, штуки)"""
+    """Рассчитывает прогноз выпуска со станка до конца смены.
+
+    Учитывает только «хвост» текущей активной операции (замена ролика/телеги).
+    Прошедшие простои игнорируются. Возвращает: (паллеты, коробки_остаток,
+    штуки_остаток)
+    """
     shift_type, shift_end = get_current_shift()
     now = datetime.now()
 
+    # 1. Время до конца смены в минутах
     time_remaining = (shift_end - now).total_seconds() / 60
     if time_remaining <= 0:
         return 0, 0, 0
 
-    shift_start = shift_end - timedelta(hours=11, minutes=50)
-    # Все простои текущей смены (прошедшие и будущие) — как в клиентском
-    # calculateProduction() из app.js.
-    downtimes = DowntimeLog.query.filter(
-        DowntimeLog.machine_id == machine_id,
-        DowntimeLog.timestamp >= shift_start,
-        DowntimeLog.timestamp <= shift_end,
-    ).all()
-
-    total_downtime = sum(d.duration_minutes for d in downtimes)
-    effective_time = max(0, time_remaining - total_downtime)
-
-    total_pieces = effective_time * product.cycles_per_minute * product.cavitations
-    total_boxes = total_pieces / product.pieces_per_box
-    total_pallets = total_boxes / product.boxes_per_pallet
-
-    full_pallets = math.floor(total_pallets)
-    remaining_boxes = math.floor(total_boxes) - (
-        full_pallets * product.boxes_per_pallet
+    # 2. Ищем самый свежий простой, который начался до или в текущий момент времени
+    latest_downtime = (
+        DowntimeLog.query.filter(
+            DowntimeLog.machine_id == machine_id, DowntimeLog.timestamp <= now
+        )
+        .order_by(DowntimeLog.timestamp.desc())
+        .first()
     )
 
-    return full_pallets, remaining_boxes, math.floor(total_pieces)
+    current_downtime_minutes = 0
+
+    if latest_downtime and latest_downtime.duration_minutes:
+        # Вычисляем время планового окончания текущего простоя
+        downtime_end = latest_downtime.timestamp + timedelta(
+            minutes=latest_downtime.duration_minutes
+        )
+
+        # Если операция ЕЩЕ ИДЕТ прямо сейчас (закончится в будущем)
+        if downtime_end > now:
+            # Вычитаем только остаток минут, который «откусывает» от будущего времени смены
+            current_downtime_minutes = (downtime_end - now).total_seconds() / 60
+
+    # 3. Чистое эффективное время работы
+    effective_time = max(0.0, time_remaining - current_downtime_minutes)
+
+    # 4. Точный каскадный расчет штук, коробок и паллет (без float-ошибок)
+    total_pieces = math.floor(
+        effective_time * product.cycles_per_minute * product.cavitations
+    )
+
+    pieces_per_box = product.pieces_per_box
+    pieces_per_pallet = pieces_per_box * product.boxes_per_pallet
+
+    # Считаем целые паллеты
+    full_pallets = total_pieces // pieces_per_pallet
+    rem_pieces_after_pallets = total_pieces % pieces_per_pallet
+
+    # Из остатка штук считаем целые коробки
+    remaining_boxes = rem_pieces_after_pallets // pieces_per_box
+    # Оставшиеся штуки, которые не поместились в целую коробку
+    remaining_pieces = rem_pieces_after_pallets % pieces_per_box
+
+    return full_pallets, remaining_boxes, remaining_pieces
 
 
 # PWA routes — Service Worker и Manifest
