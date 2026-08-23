@@ -756,6 +756,20 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   });
+
+  // Аккордеон баланса смены
+  document.querySelectorAll(".balance-accordion-btn").forEach((btn) => {
+    btn.addEventListener("click", function () {
+      const machineId = this.dataset.machine;
+      const content = document.getElementById(`balanceAccordion${machineId}`);
+      if (content) {
+        content.classList.toggle("collapsed");
+        this.textContent = content.classList.contains("collapsed")
+          ? "⚖️ Баланс смены ▾"
+          : "⚖️ Баланс смены ▴";
+      }
+    });
+  });
 });
 
 // Форма калькулятора ленты
