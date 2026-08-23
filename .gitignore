@@ -34,4 +34,5 @@ htmlcov/
 *.njsproj
 *.sln
 
-.aider*
+#Рабочие файлы
+promt.md
