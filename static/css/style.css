@@ -663,15 +663,16 @@ header {
 
 /* Поля ввода факта выпуска — крупные, удобные с мобильного */
 .balance-row-fact {
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: stretch;
     gap: 8px;
 }
 
 .fact-inputs {
     display: flex;
-    gap: 10px;
+    flex-direction: column;
+    gap: 8px;
     flex: 1;
-    justify-content: flex-end;
 }
 
 .fact-field {
@@ -1255,16 +1256,6 @@ header {
 
     .shift-balance {
         padding: 10px;
-    }
-
-    .balance-row-fact {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .fact-inputs {
-        flex-direction: column;
-        gap: 8px;
     }
 
     .fact-field input {
