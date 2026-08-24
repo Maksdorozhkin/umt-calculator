@@ -232,26 +232,30 @@
                             <div class="shift-balance" id="shiftBalance{{ machine.id }}">
                                 <div class="balance-accordion-btn" data-machine="{{ machine.id }}">⚖️ Баланс смены ▾</div>
                                 <div class="balance-accordion-content collapsed" id="balanceAccordion{{ machine.id }}">
-                                    <div class="balance-row">
+                                    <div class="balance-row balance-row-fact">
                                         <span class="balance-label">✅ Факт выпуска:</span>
-                                        <input
-                                            type="text"
-                                            inputmode="numeric"
-                                            id="factPallets{{ machine.id }}"
-                                            placeholder="0"
-                                            data-machine="{{ machine.id }}"
-                                            style="width:60px;text-align:center"
-                                        />
-                                        <span class="balance-unit">п.</span>
-                                        <input
-                                            type="text"
-                                            inputmode="numeric"
-                                            id="factBoxes{{ machine.id }}"
-                                            placeholder="0"
-                                            data-machine="{{ machine.id }}"
-                                            style="width:60px;text-align:center"
-                                        />
-                                        <span class="balance-unit">кор.</span>
+                                        <div class="fact-inputs">
+                                            <div class="fact-field">
+                                                <input
+                                                    type="text"
+                                                    inputmode="numeric"
+                                                    id="factPallets{{ machine.id }}"
+                                                    placeholder="0"
+                                                    data-machine="{{ machine.id }}"
+                                                />
+                                                <span class="balance-unit">п.</span>
+                                            </div>
+                                            <div class="fact-field">
+                                                <input
+                                                    type="text"
+                                                    inputmode="numeric"
+                                                    id="factBoxes{{ machine.id }}"
+                                                    placeholder="0"
+                                                    data-machine="{{ machine.id }}"
+                                                />
+                                                <span class="balance-unit">кор.</span>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div class="balance-row">
                                         <span class="balance-label">⏱ Прошло времени:</span>
