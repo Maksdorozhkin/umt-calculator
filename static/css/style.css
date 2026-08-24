@@ -661,6 +661,55 @@ header {
     font-size: 0.8rem;
 }
 
+/* Поля ввода факта выпуска — крупные, удобные с мобильного */
+.balance-row-fact {
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.fact-inputs {
+    display: flex;
+    gap: 10px;
+    flex: 1;
+    justify-content: flex-end;
+}
+
+.fact-field {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+}
+
+.fact-field input {
+    flex: 1;
+    min-width: 0;
+    padding: 12px 10px;
+    font-size: 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font-size: 1.25rem;
+    font-weight: 700;
+    text-align: center;
+    outline: none;
+    transition:
+        border-color var(--transition),
+        box-shadow var(--transition);
+}
+
+.fact-field input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+.fact-field input::placeholder {
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
 #factOutput {
     width: 90px !important;
     padding: 4px 8px !important;
@@ -1206,6 +1255,21 @@ header {
 
     .shift-balance {
         padding: 10px;
+    }
+
+    .balance-row-fact {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .fact-inputs {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .fact-field input {
+        padding: 14px 10px;
+        font-size: 1.15rem;
     }
 
     #factOutput {
