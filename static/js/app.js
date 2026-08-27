@@ -538,8 +538,14 @@ function setupProductForms() {
     fields.forEach((id) => {
       const el = document.getElementById(id);
       if (el) {
-        el.addEventListener("input", () => updateShiftOutput(i));
-        el.addEventListener("change", () => updateShiftOutput(i));
+        el.addEventListener("input", () => {
+          updateShiftOutput(i);
+          calculateShiftBalance(i);
+        });
+        el.addEventListener("change", () => {
+          updateShiftOutput(i);
+          calculateShiftBalance(i);
+        });
       }
     });
   }
