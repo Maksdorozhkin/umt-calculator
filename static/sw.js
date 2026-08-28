@@ -1,6 +1,6 @@
 // Инкрементируйте версию при КАЖДОМ изменении кода (v1 -> v2 -> v3)
-const CACHE_NAME = "umt-v3.23";
-const STATIC_CACHE = "umt-static-v3.23";
+const CACHE_NAME = "umt-v3.24";
+const STATIC_CACHE = "umt-static-v3.24";
 
 // ── Assets to precache (ВНИМАНИЕ: '/sw.js' отсюда УДАЛЕН!) ──
 const PRECACHE_URLS = [
