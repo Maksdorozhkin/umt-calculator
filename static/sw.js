@@ -1,6 +1,6 @@
 // Инкрементируйте версию при КАЖДОМ изменении кода (v1 -> v2 -> v3)
-const CACHE_NAME = "umt-v3.22";
-const STATIC_CACHE = "umt-static-v3.22";
+const CACHE_NAME = "umt-v3.23";
+const STATIC_CACHE = "umt-static-v3.23";
 
 // ── Assets to precache (ВНИМАНИЕ: '/sw.js' отсюда УДАЛЕН!) ──
 const PRECACHE_URLS = [
@@ -55,6 +55,13 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // ── 1.5. HTML-навигация ("/" и "/about") →  Network-First ──
+  // Всегда свежий HTML, чтобы window.location.reload() давал актуальную версию.
+  if (event.request.mode === "navigate" || url.pathname === "/" || url.pathname === "/about") {
+    event.respondWith(networkFirstHtml(event.request));
+    return;
+  }
+
   // ── 2. Static assets  →  Stale-While-Revalidate (Надежнее для обновлений) ──
   event.respondWith(staleWhileRevalidateStatic(event.request));
 });
@@ -74,6 +81,29 @@ async function networkFirstApi(request) {
     return new Response(JSON.stringify({ offline: true }), {
       headers: { "Content-Type": "application/json" },
     });
+  }
+}
+
+// ── Strategy: Network-First (HTML-навигация) ──
+// Сначала сеть (всегда свежий HTML), при сбое — кэш.
+async function networkFirstHtml(request) {
+  const cache = await caches.open(STATIC_CACHE);
+  try {
+    const fresh = await fetch(request);
+    if (fresh.ok) {
+      cache.put(request, fresh.clone());
+    }
+    return fresh;
+  } catch {
+    const cached = await cache.match(request);
+    if (cached) return cached;
+    if (request.mode === "navigate") {
+      return (
+        (await cache.match("/")) ||
+        new Response("Offline", { status: 503, statusText: "Offline" })
+      );
+    }
+    return new Response("Offline", { status: 503, statusText: "Offline" });
   }
 }
 
