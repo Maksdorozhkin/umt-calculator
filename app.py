@@ -159,9 +159,14 @@ def calculate_production(product, machine_id):
 @app.route("/sw.js")
 def service_worker():
     """Serve the PWA Service Worker with correct MIME type"""
-    return send_from_directory(
+    resp = send_from_directory(
         app.static_folder, "sw.js", mimetype="application/javascript"
     )
+    # SW должен всегда отдаваться свежим, иначе браузер не увидит обновление
+    resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    resp.headers["Pragma"] = "no-cache"
+    resp.headers["Expires"] = "0"
+    return resp
 
 
 @app.route("/manifest.json")
